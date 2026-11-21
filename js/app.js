@@ -15,7 +15,7 @@ function defaultState() {
   for (const [k, v] of Object.entries(ACTIVITIES)) schedule[k] = [...v.days];
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null,
-    history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {},
+    history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {},
     settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, schedule },
   };
 }
@@ -74,6 +74,8 @@ const sfx = {
   no() { tone(320, .16, 'triangle', 0, .12); tone(250, .22, 'triangle', .14, .12); },
   pop() { tone(900, .07, 'square', 0, .06); tone(450, .08, 'sine', .03, .12); },
   tap() { tone(560, .06, 'sine', 0, .08); },
+  soft() { tone(440, .12, 'sine', 0, .08); tone(392, .16, 'sine', .1, .07); },
+  page() { tone(880, .05, 'sine', 0, .05); tone(1175, .07, 'sine', .05, .05); },
   flip() { tone(700, .05, 'triangle', 0, .08); },
   fanfare() { [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .26, 'triangle', i * .13, .16)); },
 };
@@ -111,6 +113,7 @@ function say(text, opt = {}) {
     let finished = false;
     const done = () => { if (finished) return; finished = true; if (tok === speakTok) document.body.classList.remove('talking'); res(); };
     u.onend = done; u.onerror = done;
+    if (opt.onBoundary) u.onboundary = (e) => { if (tok === speakTok) opt.onBoundary(e.charIndex); };
     setTimeout(done, 1500 + text.length * 160 / u.rate);
     document.body.classList.add('talking');
     speechSynthesis.speak(u);
@@ -322,7 +325,7 @@ function showHome() {
   const l = lessonAt(idx), lab = lessonLabel(l);
   const stage = STAGES[Math.min(l.stage, 4)];
   const dow = new Date().getDay();
-  const tiles = ['abc', 'trace', 'game', 'mywords', 'review', 'song', 'story'].map(k => {
+  const tiles = ['book', 'abc', 'trace', 'game', 'mywords', 'review', 'song', 'story'].map(k => {
     const a = ACTIVITIES[k];
     const sched = S.settings.schedule[k]?.[dow];
     const badge = t.acts[k] ? '<span class="badge ok">✓</span>' : sched ? '<span class="badge">오늘!</span>' : '';
@@ -358,7 +361,7 @@ function showHome() {
   });
 }
 function openActivity(k) {
-  ({ abc: showABC, trace: () => showTraceMenu(), game: showGames, mywords: startMyWords, review: startReview, song: () => showVideos('songs'), story: () => showVideos('stories') })[k]();
+  ({ book: showLibrary, abc: showABC, trace: () => showTraceMenu(), game: showGames, mywords: startMyWords, review: startReview, song: () => showVideos('songs'), story: () => showVideos('stories') })[k]();
 }
 
 /* ---------------- 처음 설정 ---------------- */
@@ -583,7 +586,7 @@ function findGame({ targets, pool, rounds, ctx, sentence, onDone }) {
     const others = shuffle([...targets.filter(x => x.e !== target.e && x.w !== target.w), ...shuffle(extras).slice(0, 4)]);
     const uniq = []; for (const o of others) if (!uniq.some(u => u.e === o.e) && o.e !== target.e) uniq.push(o);
     const choices = shuffle([target, ...uniq.slice(0, 2)]);
-    let firstTry = true, solved = false;
+    let firstTry = true, solved = false, wrongs = 0;
     const prompt = sentence ? target.w : `Can you find ${target.w}?`;
     render((ctx ? topbar(ctx) : topbar()) + `
       ${jennySays(prompt, sentence ? target.ko : `"${target.ko}" 그림을 찾아봐요!`, 120)}
@@ -600,8 +603,9 @@ function findGame({ targets, pool, rounds, ctx, sentence, onDone }) {
           if (firstTry) addStars(1, b);
           if (await talk(rand(['Yes!', 'Great!', 'You got it!', 'Super!']), sentence ? '' : target.w)) { await wait(400); if (b.isConnected) round(); }
         } else {
-          firstTry = false; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); sfx.no();
-          talk(`That's ${c.w}.`, 'Try again!');
+          firstTry = false; wrongs++; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); sfx.soft();
+          talk(sentence ? 'Hmm.' : `That's ${c.w}.`, rand(["Let's look again!", 'Where is it?', 'Almost!']));
+          if (wrongs >= 2) app.querySelectorAll('.choice')[choices.indexOf(target)]?.classList.add('hint');
         }
       },
     });
@@ -743,7 +747,7 @@ function feedJenny(words, onDone) {
           addStars(1, $('#jj'));
           if (await talk(`Yummy! ${target.w}! Thank you!`)) round();
         } else {
-          first = false; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); sfx.no();
+          first = false; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); sfx.soft();
           talk(`No, that's ${c.w}. ${target.w}, please!`);
         }
       },
@@ -842,10 +846,12 @@ function rewardScreen({ lesson, sticker, stars, mini }) {
   }
   save();
   const recs = recommend(lesson);
+  const book = recommendedBook();
   render(topbar() + `<div class="center">
       ${st ? `<div class="sticker-big">${st}</div><div class="hint" style="font-size:26px">새 스티커를 받았어요!</div>` : jenny(180, 'jenny-hop')}
       <div class="reward-stars">${'⭐'.repeat(Math.min(stars, 5))}</div>
       <h1 class="title"><span class="en">Great job, ${esc(childNameEn())}!</span>${esc(childName())}, 정말 잘했어요!</h1>
+      ${mini ? '' : `<button class="big-btn" data-a="book" style="max-width:760px"><span class="emoji">${book.cover}</span><span><div class="t1">Story time · 제니 그림책</div><div class="t2">${esc(book.ko)}</div><div class="t1">${esc(book.title)}</div></span><span class="go">📖</span></button>`}
       ${mini ? '' : `<h2 class="section-title">📺 오늘의 동화 · 영상 시간 <small class="hint">(유튜브가 열려요)</small></h2>
       <div class="video-grid" style="width:100%">${recs.map((v, i) => videoCard(v, i)).join('')}</div>`}
       <div class="nav-row"><button class="btn" data-a="home" style="font-size:24px;padding:18px 30px">🏠 홈으로</button>
@@ -854,6 +860,7 @@ function rewardScreen({ lesson, sticker, stars, mini }) {
     ...baseHandlers(),
     v: (b) => { const v = recs[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), 'story'); },
     more: () => showVideos('stories'),
+    book: () => readBook(book),
   });
   addStars(stars);
   sfx.fanfare(); confetti(50);
@@ -901,6 +908,114 @@ function showVideos(cat) {
   say(t[0]);
 }
 
+/* ---------------- 제니 그림책 (듣기 중심, 부담 없이) ---------------- */
+function recommendedBook() {
+  const stage = Math.min(lessonAt(S.dayIndex).stage, 3);
+  const cands = STORIES.filter(b => b.stage <= stage);
+  const pool = cands.length ? cands : STORIES;
+  return pool.find(b => !S.booksRead[b.id]) || [...pool].sort((a, b) => (S.booksRead[a.id] || 0) - (S.booksRead[b.id] || 0))[0];
+}
+function showLibrary() {
+  const rec = recommendedBook();
+  render(topbar() + jennySays("Let's read a book!", '어떤 책을 읽을까요? 표지를 눌러요', 120) + `
+    <div class="book-grid">${STORIES.map((b, i) => `<button class="book" data-a="open" data-i="${i}">
+      ${b.id === rec.id ? '<span class="badge">추천!</span>' : ''}
+      <span class="cover">${b.cover}</span><span class="bt en">${esc(b.title)}</span><span class="bk">${esc(b.ko)}</span>
+      <span class="read">${S.booksRead[b.id] ? '⭐'.repeat(Math.min(3, S.booksRead[b.id])) : '새 책 ✨'}</span></button>`).join('')}</div>`, {
+    ...baseHandlers(),
+    open: (b) => { sfx.page(); readBook(STORIES[+b.dataset.i]); },
+  });
+  say("Let's read a book!");
+}
+function readBook(book) {
+  let i = -1, auto = false, slow = false;
+  const pages = book.p;
+  const show = () => {
+    if (i < 0) return cover();
+    if (i >= pages.length) return theEnd();
+    const [text, ko, items] = pages[i];
+    const words = text.split(/\s+/);
+    const starts = []; let pos = 0;
+    words.forEach(w => { const k = text.indexOf(w, pos); starts.push(k); pos = k + w.length; });
+    const size = ['', 'min(30vh,240px)', 'min(24vh,190px)', 'min(19vh,150px)', 'min(14vh,118px)', 'min(12vh,100px)'][Math.min(items.length, 5)];
+    render(topbar({ idx: i + 1, total: pages.length }) + `
+      <div class="center">
+        <div class="story-card">
+          <div class="scene">${items.map((it, j) => `<button class="scene-item" data-a="item" data-j="${j}" style="font-size:${size};animation-delay:${j * .15}s">${it[0]}</button>`).join('')}</div>
+          <div class="story-text en" id="st">${words.map((w, k) => `<button class="sw" data-a="word" data-k="${k}">${esc(w)}</button>`).join(' ')}</div>
+          ${S.settings.showKorean ? `<div class="story-ko">${esc(ko)}</div>` : ''}
+        </div>
+        <div class="hint">그림과 단어를 누르면 읽어줘요</div>
+      </div>
+      <div class="nav-row">
+        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>⬅️</button>
+        <button class="round-btn speak" data-a="read">🔊</button>
+        <button class="round-btn ${slow ? 'primary' : ''}" data-a="slow" aria-label="천천히">🐢</button>
+        <button class="round-btn ${auto ? 'primary' : ''}" data-a="auto" aria-label="자동 넘김">🎧</button>
+        <button class="round-btn primary" data-a="next" id="pgNext">➡️</button>
+      </div>`, {
+      ...baseHandlers(),
+      item: (b) => { const it = items[+b.dataset.j]; b.classList.remove('boing'); void b.offsetWidth; b.classList.add('boing'); sfx.tap(); say(it[1]); },
+      word: (b) => { const w = words[+b.dataset.k].replace(/[^A-Za-z'-]/g, ''); mark(+b.dataset.k); say(w).then(() => mark(-1)); },
+      read: () => readPage(),
+      slow: () => { slow = !slow; show(); },
+      auto: () => { auto = !auto; show(); },
+      prev: () => { i--; sfx.page(); show(); },
+      next: () => { i++; sfx.page(); show(); },
+    });
+    const mark = (k) => app.querySelectorAll('.sw').forEach((el, n) => el.classList.toggle('on', n === k));
+    async function readPage() {
+      const st = $('#st'); let got = false;
+      st.classList.add('reading');
+      const nav = navTok;
+      await say(text, { rate: slow ? .75 : 1, onBoundary: (ci) => { got = true; st.classList.remove('reading'); let k = 0; while (k + 1 < starts.length && starts[k + 1] <= ci) k++; mark(k); } });
+      if (nav !== navTok) return;
+      st.classList.remove('reading'); mark(-1);
+      if (auto) { await wait(1300); if (nav === navTok) { i++; sfx.page(); show(); } }
+      else { const n = $('#pgNext'); if (n) n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 700, iterations: 2 }); }
+    }
+    setTimeout(() => { if (app.contains($('#st'))) readPage(); }, 350);
+  };
+  const cover = () => {
+    render(topbar() + `<div class="center">
+      <div class="book big"><span class="cover" style="font-size:min(30vh,260px)">${book.cover}</span>
+        <span class="bt en" style="font-size:52px">${esc(book.title)}</span><span class="bk" style="font-size:28px">${esc(book.ko)}</span></div>
+      <div class="hint">반복 표현: <span class="en">${esc(book.pattern)}</span></div>
+      <div class="nav-row">
+        <button class="btn" data-a="together" style="font-size:24px;padding:18px 28px">📖 같이 읽기</button>
+        <button class="btn" data-a="listen" style="font-size:24px;padding:18px 28px;background:var(--sky)">🎧 들려주기 (자동)</button>
+      </div></div>`, {
+      ...baseHandlers(),
+      together: () => { auto = false; i = 0; sfx.page(); show(); },
+      listen: () => { auto = true; i = 0; sfx.page(); show(); },
+    });
+    talk(book.title + '.');
+  };
+  const theEnd = () => {
+    const first = !S.booksRead[book.id];
+    S.booksRead[book.id] = (S.booksRead[book.id] || 0) + 1;
+    let st = null;
+    if (first) { const locked = STICKERS.filter(x => !S.stickers.includes(x)); if (locked.length) { st = rand(locked); S.stickers.push(st); } }
+    markAct('book'); save();
+    render(topbar() + `<div class="center">
+      ${st ? `<div class="sticker-big">${st}</div>` : jenny(200, 'jenny-hop')}
+      <h1 class="title"><span class="en">The End!</span>끝! 재미있었지?</h1>
+      <div class="reward-stars">⭐⭐</div>
+      <div class="nav-row">
+        <button class="btn" data-a="again" style="font-size:22px;padding:16px 24px">🔁 다시 읽기</button>
+        <button class="btn" data-a="lib" style="font-size:22px;padding:16px 24px;background:var(--mint)">📚 다른 책</button>
+        <button class="btn" data-a="home" style="font-size:22px;padding:16px 24px;background:var(--sky)">🏠 홈으로</button>
+      </div></div>`, {
+      ...baseHandlers(),
+      again: () => { i = 0; show(); },
+      lib: showLibrary,
+    });
+    addStars(2); sfx.fanfare(); confetti(40);
+    talk('The end!', 300, `Great listening, ${childNameEn()}!`, ...(st ? [300, 'Here is a sticker for you!'] : []));
+  };
+  show();
+}
+
 /* ---------------- 스티커북 ---------------- */
 function showStickers() {
   render(topbar() + jennySays(`You have ${S.stickers.length} stickers!`, `스티커 ${S.stickers.length}개를 모았어요! 수업을 마치면 하나씩 받아요`, 120) +
@@ -927,7 +1042,7 @@ function showParent() {
   render(`
     <div class="topbar"><button class="icon-btn" data-a="home">🏠</button><h1 style="margin:0;font-size:32px;flex:1">부모님 메뉴</h1></div>
     <div class="panel"><h3>📊 학습 현황</h3>
-      <div class="stats"><div><b>${lv.lv}</b>레벨</div><div><b>${S.stars}</b>모은 별</div><div><b>${streak()}</b>연속 학습일</div><div><b>${learnedCnt}</b>배운 단어</div></div>
+      <div class="stats"><div><b>${lv.lv}</b>레벨</div><div><b>${S.stars}</b>모은 별</div><div><b>${streak()}</b>연속 학습일</div><div><b>${learnedCnt}</b>배운 단어</div><div><b>${Object.keys(S.booksRead).length}/${STORIES.length}</b>읽은 그림책</div></div>
       <p class="desc" style="margin-top:14px">오늘 학습 ${Math.round(t.sec / 60)}분 · 최근 7일 ${Math.round(minsWeek / 60)}분 · 현재 진도 <b>Day ${S.dayIndex}</b> ${esc(cl.ko)} (${esc(cl.en)})</p>
       <div class="cal">${cal}</div></div>
 
