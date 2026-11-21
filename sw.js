@@ -1,5 +1,5 @@
 // 오프라인 지원: 앱 파일을 캐시하고, 온라인이면 백그라운드에서 최신 버전으로 갱신
-const CACHE = 'jenny-english-v4';
+const CACHE = 'jenny-english-v5';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/data.js', 'js/icons.js', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {

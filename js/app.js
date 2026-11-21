@@ -371,7 +371,7 @@ function showHome() {
 
   render(`
     <div class="topbar"><div class="pill lv"><b class="en">Level ${lv.lv}</b><div class="bar"><i style="width:${lv.cur / lv.need * 100}%"></i></div></div>
-      <div class="pill">${icon('sun', 26, '#FFC23D', '#FF9F1C', '#FFF2CF')} ${streak()}일 연속</div><div class="spacer"></div>
+      <div class="pill streak">${icon('sun', 26, '#FFC23D', '#FF9F1C', '#FFF2CF')} ${streak()}일 연속</div><div class="spacer"></div>
       ${starPill()}<button class="icon-btn" data-a="parent" aria-label="부모님 메뉴">${icon('gear', 30, '#B9AECB')}</button></div>
     <div class="week-stones">${week}</div>
     <div class="village-mid">

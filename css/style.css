@@ -417,3 +417,127 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
   .signpost .t2 { font-size: 26px; }
   .week-stones span { width: 32px; }
 }
+
+/* =========================================================
+   작은 태블릿·폴더블 (갤럭시 폴드 펼침 ~840px, 커버 ~412px)
+   zoom 으로 마을 요소를 비율대로 줄여 가로 넘침 방지
+   ========================================================= */
+@media (max-width: 1199px) and (orientation: landscape) {
+  .village { grid-template-columns: repeat(5, 1fr); row-gap: 26px; }
+  .house { zoom: .8; }
+  .village-mid .jenny-wrap { zoom: .8; }
+  .signpost { zoom: .85; }
+}
+@media (max-width: 900px) {
+  .topbar .pill { font-size: 18px; padding: 8px 14px; }
+  .topbar .icon-btn { width: 54px; height: 54px; }
+  .tiles, .book-grid { gap: 14px; }
+  .bubble { font-size: 22px; }
+}
+@media (max-width: 760px) {
+  /* 앞에서 정의한 작은 집 크기 대신 zoom 하나로 통일 */
+  .house .roof { border-left-width: 62px; border-right-width: 62px; border-bottom-width: 52px; }
+  .house .hbody { width: 108px; height: 104px; }
+  .house .win { width: 82px; height: 82px; }
+  .house .win svg { width: 54px; height: 54px; }
+  .house .label { font-size: 19px; }
+  .village { grid-template-columns: repeat(5, 1fr); row-gap: 30px; }
+  .house { zoom: .7; }
+  .signpost .t2 { font-size: 30px; }
+}
+@media (max-width: 560px) {
+  #app { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .screen { gap: 14px; }
+  .topbar { gap: 8px; }
+  .topbar .pill { font-size: 16px; padding: 7px 11px; gap: 5px; }
+  .topbar .pill svg { width: 22px; height: 22px; }
+  .pill.lv .bar { width: 56px; }
+  .topbar .pill.streak { display: none; }
+  .topbar .icon-btn { width: 46px; height: 46px; }
+  .topbar .icon-btn svg { width: 28px; height: 28px; }
+  .week-stones { zoom: .8; }
+  .village { grid-template-columns: repeat(4, 1fr); row-gap: 22px; gap: 4px; }
+  .house { zoom: .62; }
+  .house:nth-child(even) { margin-bottom: 0; }
+  .village-mid { padding: 0; gap: 10px; }
+  .village-mid .jenny-wrap { zoom: .72; }
+  .signpost { zoom: .7; width: 100%; }
+  .progress-dots { gap: 2px; }
+  .progress-dots span svg { width: 22px; height: 22px; }
+  .round-btn { width: 76px; height: 76px; }
+  .round-btn svg { width: 36px; height: 36px; }
+  .nav-row { gap: 12px; flex-wrap: wrap; }
+  .word-card { width: 92vw; }
+  .word-card .w { font-size: 40px; }
+  .story-card { padding: 20px 16px; border-radius: 30px; }
+  .story-text { font-size: 28px; }
+  .choices { gap: 12px; width: 94vw; }
+  .memory { gap: 10px; width: 94vw; }
+  .memory.six { width: 94vw; }
+  .game-tiles { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .game-tiles .tile { min-height: 170px; }
+  .abc-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .abc-grid button { font-size: 40px; }
+  .book-grid { grid-template-columns: repeat(2, 1fr); }
+  .video-grid { grid-template-columns: 1fr; }
+  .sticker-grid { grid-template-columns: repeat(4, 1fr); }
+  .letter-info { gap: 8px; }
+  .chip { font-size: 20px; padding: 10px 14px; }
+  .word-row .mini-word { width: 30vw; }
+  .trace-wrap { width: 92vw; height: 58vh; }
+  .title .en { font-size: 34px; }
+  .title { font-size: 28px; }
+  .parent-grid { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr 1fr; }
+  .panel { overflow-x: auto; }
+  .panel { padding: 16px; font-size: 16px; }
+  .panel table { font-size: 14px; }
+  .panel input[type=checkbox] { width: 22px; height: 22px; }
+  .modal { padding: 22px; }
+  .numpad button { height: 62px; font-size: 28px; }
+}
+@media (max-width: 900px) {
+  .book-grid { grid-template-columns: repeat(3, 1fr); }
+  .book .cover { font-size: 72px; }
+  .book .bt { font-size: 20px; }
+  .parent-grid { grid-template-columns: 1fr; }
+  .panel { overflow-x: auto; }
+}
+@media (max-width: 560px) {
+  .book-grid { grid-template-columns: repeat(2, 1fr); }
+  .book .cover { font-size: 60px; }
+  .book .bt { font-size: 17px; }
+  .book .bk, .book .read { font-size: 14px; }
+  .choice { font-size: 64px !important; padding: 10px; border-radius: 24px; }
+  .card { padding: 16px; }
+  .trace-tools { flex-wrap: wrap; gap: 10px; }
+  .color-dot { width: 46px; height: 46px; border-width: 4px; }
+  .big-btn { padding: 16px 18px; gap: 12px; border-radius: 26px; }
+  .big-btn .emoji { font-size: 44px; }
+  .big-btn .t2 { font-size: 22px; }
+  .big-btn .t1 { font-size: 15px; }
+  .big-btn .go { font-size: 30px; }
+  .video-card { padding: 12px; }
+  .video-card .emoji { font-size: 40px; }
+  .video-card .t { font-size: 18px; }
+}
+@media (max-width: 560px) {
+  .reward-stars { font-size: 46px; letter-spacing: 2px; }
+  .sticker-big { font-size: 130px; }
+}
+/* 홈 한 화면에 쏙: 높이가 낮은 화면(폴드 펼침)에선 제니·표지판을 더 작게 */
+@media (max-width: 1199px) and (orientation: landscape) {
+  .village-mid .jenny-wrap { zoom: .65; }
+  .signpost { zoom: .75; }
+  .week-stones { zoom: .85; }
+}
+@media (max-height: 900px) and (orientation: portrait) {
+  .village-mid .jenny-wrap { zoom: .6; }
+  .signpost { zoom: .75; }
+  .week-stones { zoom: .8; }
+  .village { padding-top: 12px; }
+  .screen { gap: 10px; }
+}
+@media (max-width: 560px) {
+  .village { row-gap: 40px; }
+}
