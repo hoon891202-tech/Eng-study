@@ -14,9 +14,9 @@ function defaultState() {
   const schedule = {};
   for (const [k, v] of Object.entries(ACTIVITIES)) schedule[k] = [...v.days];
   return {
-    childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null,
+    childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
     history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {},
-    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, schedule },
+    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, schedule },
   };
 }
 function load() {
@@ -26,6 +26,8 @@ function load() {
     if (raw) {
       const d = JSON.parse(raw);
       const st = d.settings || {};
+      // 커리큘럼 순서가 바뀌면(듣기→말하기→읽기) 진도·요일표만 새로 시작, 별·스티커·기록은 유지
+      if (d.curVer !== CURRICULUM_VERSION) { d.dayIndex = 0; d.lastLessonIdx = null; d.curVer = CURRICULUM_VERSION; st.schedule = {}; }
       return { ...base, ...d, settings: { ...base.settings, ...st, schedule: { ...base.settings.schedule, ...(st.schedule || {}) } } };
     }
   } catch (e) { console.warn(e); }
@@ -235,6 +237,8 @@ function lessonLabel(l) {
     case 'review': return { en: `Review ${l.letters[0]}–${l.letters[l.letters.length - 1]}`, ko: '알파벳 복습', icon: '🔁' };
     case 'theme': { const t = THEMES[l.key]; return { en: t.title, ko: t.ko, icon: t.icon }; }
     case 'sentence': { const t = SENTENCES[l.key]; return { en: t.title, ko: t.ko, icon: t.icon }; }
+    case 'story': { const b = bookById(l.key); return { en: b.title, ko: `이야기 듣기 · ${b.ko}`, icon: b.cover }; }
+    case 'relisten': return { en: 'Listen Again', ko: '다시 듣기 · ' + l.stories.map(k => bookById(k).ko).join(', '), icon: '🎧' };
     default: return { en: `Rainbow Review ${l.n}`, ko: '무지개 복습', icon: '🌈' };
   }
 }
@@ -244,6 +248,8 @@ function lessonWords(l) {
     case 'review': return l.letters.flatMap(L => ALPHABET.find(x => x.L === L).words.map(W));
     case 'theme': return THEMES[l.key].words.map(W);
     case 'sentence': return SENTENCES[l.key].items.map(W);
+    case 'story': return storyWords(bookById(l.key));
+    case 'relisten': return l.stories.flatMap(k => storyWords(bookById(k)));
     default: return [];
   }
 }
@@ -253,6 +259,21 @@ function learnedWords() {
   for (let i = 0; i <= upto; i++) { const l = CURRICULUM[i]; if (l.type !== 'sentence') lessonWords(l).forEach(x => m.set(x.w, x)); }
   S.customWords.forEach(x => m.set(x.w, { ...x, custom: true }));
   return [...m.values()];
+}
+const bookById = (id) => STORIES.find(b => b.id === id) || STORIES[0];
+let _dict = null;
+function koOf(w) {
+  if (!_dict) { _dict = {}; ALPHABET.forEach(a => a.words.forEach(x => { _dict[x[0]] = x[2]; })); Object.values(THEMES).forEach(t => t.words.forEach(x => { _dict[x[0]] = x[2]; })); }
+  return _dict[w] || _dict[w.replace(/s$/, '')] || '';
+}
+// 이야기 속 그림에서 핵심 단어 뽑기 (제니 제외, 그림 중복 제거)
+function storyWords(book) {
+  const out = [];
+  for (const pg of book.p) for (const [e, w] of pg[2]) {
+    if (w === 'Jenny' || out.some(o => o.e === e || o.w === w)) continue;
+    out.push({ w, e, ko: koOf(w) });
+  }
+  return out.slice(0, 5);
 }
 function allWords() {
   const m = new Map();
@@ -325,7 +346,7 @@ function showHome() {
   const l = lessonAt(idx), lab = lessonLabel(l);
   const stage = STAGES[Math.min(l.stage, 4)];
   const dow = new Date().getDay();
-  const tiles = ['book', 'abc', 'trace', 'game', 'mywords', 'review', 'song', 'story'].map(k => {
+  const tiles = ['listen', 'book', 'talk', 'game', 'mywords', 'review', 'song', 'story', 'abc'].map(k => {
     const a = ACTIVITIES[k];
     const sched = S.settings.schedule[k]?.[dow];
     const badge = t.acts[k] ? '<span class="badge ok">✓</span>' : sched ? '<span class="badge">오늘!</span>' : '';
@@ -361,7 +382,7 @@ function showHome() {
   });
 }
 function openActivity(k) {
-  ({ book: showLibrary, abc: showABC, trace: () => showTraceMenu(), game: showGames, mywords: startMyWords, review: startReview, song: () => showVideos('songs'), story: () => showVideos('stories') })[k]();
+  ({ listen: showListening, talk: showTalkMenu, book: showLibrary, abc: showABC, trace: () => showTraceMenu(), game: showGames, mywords: startMyWords, review: startReview, song: () => showVideos('songs'), story: () => showVideos('stories') })[k]();
 }
 
 /* ---------------- 처음 설정 ---------------- */
@@ -415,9 +436,19 @@ function startLesson(replay) {
     steps.push(ctx => memoryGame(pickWeighted(words, 3), ctx));
   } else if (l.type === 'sentence') {
     steps.push(ctx => stepWords(words, ctx, { sentence: true }));
-    steps.push(ctx => findGame({ targets: words, pool: [], rounds: 4, ctx, sentence: true }));
+    steps.push(ctx => talkGame(l.key, ctx));
+  } else if (l.type === 'story') {
+    // 듣기 나라: 이야기를 통째로 듣고 → 단어 → 알아듣기 게임 → 핵심 한마디 (말하기는 권유만)
+    const book = bookById(l.key);
+    steps.push(ctx => readBook(book, { auto: true, ctx, onEnd: ctx.next }));
+    steps.push(ctx => stepWords(words, ctx, { listen: true }));
+    steps.push(ctx => findGame({ targets: words, pool: pool(), rounds: Math.min(4, words.length), ctx }));
+    steps.push(ctx => sayItStep({ w: book.say[0], ko: book.say[1], e: book.cover }, ctx));
+  } else if (l.type === 'relisten') {
+    l.stories.forEach(k => steps.push(ctx => readBook(bookById(k), { auto: true, ctx, onEnd: ctx.next })));
+    steps.push(ctx => findGame({ targets: pickWeighted(words, 5), pool: pool(), rounds: 4, ctx }));
   } else {
-    steps.push(ctx => stepWords(words, ctx));
+    steps.push(ctx => stepWords(words, ctx, { listen: l.stage <= 1 }));
     steps.push(ctx => findGame({ targets: words, pool: pool(), rounds: 4, ctx }));
     steps.push(ctx => memoryGame(pickWeighted(words, 3), ctx));
   }
@@ -447,6 +478,13 @@ function stepIntro(l, ctx) {
   } else if (l.type === 'review') {
     body = jennySays("Let's review!", '배운 알파벳을 다시 만나요') + `<div class="center"><div class="big-letter" style="font-size:min(20vh,170px)">${l.letters.join(' ')}</div></div>`;
     lines = ["Let's review!", 300, l.letters.join('. ') + '.'];
+  } else if (l.type === 'story') {
+    const b = bookById(l.key);
+    body = jennySays("Let's listen to a story!", '이야기를 들어봐요. 몰라도 괜찮아요, 그림을 보면서 들어요!') + `<div class="center"><div style="font-size:min(28vh,230px)">${b.cover}</div><h1 class="title"><span class="en">${esc(b.title)}</span>${esc(b.ko)}</h1></div>`;
+    lines = ["Let's listen to a story!", 300, b.title + '.'];
+  } else if (l.type === 'relisten') {
+    body = jennySays("Let's listen again!", '들었던 이야기를 다시 들어요. 들을수록 귀가 열려요!') + `<div class="center"><div style="font-size:min(22vh,180px)">${l.stories.map(k => bookById(k).cover).join(' ')}</div></div>`;
+    lines = ["Let's listen again!"];
   } else if (l.type === 'mix') {
     body = jennySays("Rainbow review time!", '지금까지 배운 단어를 섞어서 복습해요') + `<div class="center"><div style="font-size:200px">🌈</div></div>`;
     lines = ['Rainbow review time! Let\'s go!'];
@@ -469,7 +507,7 @@ function stepWords(words, ctx, opt = {}) {
   const show = () => {
     const x = words[i];
     render(topbar(ctx) + `
-      ${jennySays(opt.sentence ? 'Listen and say it!' : 'Say it with me!', '잘 듣고 따라 말해요', 120)}
+      ${jennySays(opt.sentence ? 'Listen and say it!' : opt.listen ? 'Listen and look!' : 'Say it with me!', opt.listen ? '잘 듣고 그림을 봐요 (따라 하고 싶으면 해도 돼요)' : '잘 듣고 따라 말해요', 120)}
       <div class="center">
         <button class="card word-card ${opt.sentence ? 'sentence-card' : ''}" data-a="say">
           <div class="pic" ${picStyle(x, 'min(24vh,210px)')}>${pic(x)}</div>
@@ -762,8 +800,10 @@ function showABC() {
   const learned = new Set(CURRICULUM.slice(0, S.dayIndex).filter(l => l.type === 'letter').map(l => l.key));
   render(topbar() + jennySays('A, B, C! Tap a letter!', '글자를 누르면 읽는 법과 단어를 알려줘요', 120) + `
     <div class="abc-grid">${ALPHABET.map(a => `<button class="${learned.has(a.L) ? 'learned' : ''}" data-a="letter" data-l="${a.L}">${a.L}${a.L.toLowerCase()}<small>${a.name}</small></button>`).join('')}</div>
-    <div class="nav-row"><button class="btn" data-a="song" style="font-size:22px;padding:16px 26px">🎵 ABC 노래 보기</button></div>`, {
+    <div class="nav-row"><button class="btn" data-a="song" style="font-size:22px;padding:16px 26px">🎵 ABC 노래 보기</button>
+    <button class="btn" data-a="trace" style="font-size:22px;padding:16px 26px;background:var(--mint)">✏️ 따라쓰기</button></div>`, {
     ...baseHandlers(),
+    trace: () => showTraceMenu(),
     letter: (b) => { sfx.tap(); letterDetail(b.dataset.l); },
     song: () => openYT(yt('ABC song for kids Super Simple Songs'), 'song'),
   });
@@ -873,6 +913,7 @@ function recommend(lesson) {
   if (lesson) {
     if (lesson.type === 'letter') out.push({ t: `Alphablocks ${lesson.key}`, ko: `알파벳 ${lesson.key} 영상`, e: '🧱', q: `Alphablocks letter ${lesson.key}` });
     else if (lesson.type === 'theme') out.push({ t: THEMES[lesson.key].title + ' Song', ko: '오늘 배운 노래', e: '🎵', q: THEMES[lesson.key].song });
+    else if (lesson.type === 'story' || lesson.type === 'relisten') out.push({ t: 'Daily Routine Songs', ko: '생활 영어 노래', e: '🎵', q: 'Super Simple Songs daily routine songs for kids' });
     else if (lesson.type === 'sentence') out.push({ t: SENTENCES[lesson.key].title, ko: '오늘 배운 노래', e: '🎵', q: SENTENCES[lesson.key].song });
     else out.push(VIDEOS.songs[0]);
   }
@@ -909,10 +950,13 @@ function showVideos(cat) {
 }
 
 /* ---------------- 제니 그림책 (듣기 중심, 부담 없이) ---------------- */
+function heardStories() {
+  return CURRICULUM.slice(0, S.dayIndex).filter(l => l.type === 'story').map(l => bookById(l.key));
+}
 function recommendedBook() {
-  const stage = Math.min(lessonAt(S.dayIndex).stage, 3);
-  const cands = STORIES.filter(b => b.stage <= stage);
-  const pool = cands.length ? cands : STORIES;
+  const heard = heardStories();
+  const next = CURRICULUM.slice(S.dayIndex).find(l => l.type === 'story');
+  const pool = heard.length ? heard : [next ? bookById(next.key) : STORIES[0]];
   return pool.find(b => !S.booksRead[b.id]) || [...pool].sort((a, b) => (S.booksRead[a.id] || 0) - (S.booksRead[b.id] || 0))[0];
 }
 function showLibrary() {
@@ -927,8 +971,8 @@ function showLibrary() {
   });
   say("Let's read a book!");
 }
-function readBook(book) {
-  let i = -1, auto = false, slow = false;
+function readBook(book, opt = {}) {
+  let i = opt.onEnd ? 0 : -1, auto = !!opt.auto, slow = false;
   const pages = book.p;
   const show = () => {
     if (i < 0) return cover();
@@ -938,7 +982,8 @@ function readBook(book) {
     const starts = []; let pos = 0;
     words.forEach(w => { const k = text.indexOf(w, pos); starts.push(k); pos = k + w.length; });
     const size = ['', 'min(30vh,240px)', 'min(24vh,190px)', 'min(19vh,150px)', 'min(14vh,118px)', 'min(12vh,100px)'][Math.min(items.length, 5)];
-    render(topbar({ idx: i + 1, total: pages.length }) + `
+    render(topbar(opt.ctx || { idx: i + 1, total: pages.length }) + `
+      ${opt.label ? `<div class="hint" style="text-align:center;font-size:22px">${opt.label}</div>` : ''}
       <div class="center">
         <div class="story-card">
           <div class="scene">${items.map((it, j) => `<button class="scene-item" data-a="item" data-j="${j}" style="font-size:${size};animation-delay:${j * .15}s">${it[0]}</button>`).join('')}</div>
@@ -992,6 +1037,12 @@ function readBook(book) {
     talk(book.title + '.');
   };
   const theEnd = () => {
+    if (opt.onEnd) {  // 수업·듣기 시간: 끝 화면 없이 다음으로
+      S.booksRead[book.id] = (S.booksRead[book.id] || 0) + 1; markAct('listen'); save();
+      render(topbar(opt.ctx) + `<div class="center">${jenny(200, 'jenny-hop')}<h1 class="title"><span class="en">The End!</span>끝!</h1></div>`, baseHandlers());
+      sfx.ok(); talk('The end!').then(ok => { if (ok) opt.onEnd(); });
+      return;
+    }
     const first = !S.booksRead[book.id];
     S.booksRead[book.id] = (S.booksRead[book.id] || 0) + 1;
     let st = null;
@@ -1014,6 +1065,161 @@ function readBook(book) {
     talk('The end!', 300, `Great listening, ${childNameEn()}!`, ...(st ? [300, 'Here is a sticker for you!'] : []));
   };
   show();
+}
+
+/* ---------------- 듣기 시간 (흘려듣기 플레이리스트) ---------------- */
+function showListening() {
+  const heard = heardStories();
+  const list = (heard.length ? shuffle(heard).slice(0, 4) : [recommendedBook()]);
+  render(topbar() + jennySays("It's listening time!", '그림을 보면서 편하게 들어요. 밥 먹을 때, 놀 때 틀어둬도 좋아요', 130) + `
+    <div class="center">
+      <div style="font-size:min(20vh,170px)">🎧</div>
+      <div class="word-row">${list.map(b => `<div class="card mini-word"><div class="pic">${b.cover}</div><div class="w" style="font-size:20px">${esc(b.title)}</div></div>`).join('')}</div>
+      <p class="hint">들은 이야기를 반복해서 들려줘요 · 자동으로 넘어가요</p>
+      <button class="btn" data-a="play" style="font-size:28px;padding:20px 40px">▶️ 듣기 시작</button>
+    </div>`, {
+    ...baseHandlers(),
+    play: () => {
+      let n = 0;
+      const nextBook = () => {
+        if (n >= list.length) return rewardScreen({ mini: true, stars: 2 });
+        const b = list[n++];
+        readBook(b, { auto: true, onEnd: nextBook, label: `🎧 ${n} / ${list.length}` });
+      };
+      markAct('listen'); nextBook();
+    },
+  });
+  say("It's listening time!");
+}
+
+/* ---------------- 따라 말하기 (녹음은 선택, 채점 없음) ---------------- */
+const canRecord = () => S.settings.useMic && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+async function recordClip(ms) {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const rec = new MediaRecorder(stream); const chunks = [];
+  rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+  const stopped = new Promise(r => { rec.onstop = r; });
+  rec.start(); await wait(ms); rec.stop(); await stopped;
+  stream.getTracks().forEach(t => t.stop());   // 마이크를 바로 꺼서 스피커 음량 복원
+  return URL.createObjectURL(new Blob(chunks, { type: rec.mimeType || 'audio/mp4' }));
+}
+function sayItStep(x, ctx, onDone, title = 'Say it with Jenny!') {
+  const done = onDone || ctx.next;
+  let busy = false;
+  render((ctx ? topbar(ctx) : topbar()) + `
+    ${jennySays(title, '제니를 따라 말해볼까? 안 해도 괜찮아요', 120)}
+    <div class="center">
+      <button class="card word-card sentence-card" data-a="hear"><div class="pic" ${picStyle(x, 'min(22vh,190px)')}>${pic(x)}</div>
+        <div class="w">${esc(x.w)}</div>${S.settings.showKorean && x.ko ? `<div class="ko">${esc(x.ko)}</div>` : ''}</button>
+      <div class="hint" id="micHint">${canRecord() ? '🎤를 누르고 말하면 내 목소리를 들려줘요' : ''}</div>
+    </div>
+    <div class="nav-row">
+      <button class="round-btn speak" data-a="hear">🔊</button>
+      ${canRecord() ? '<button class="round-btn" data-a="mic" id="micBtn" style="background:#ff6b8b;color:#fff">🎤</button>' : ''}
+      <button class="round-btn primary" data-a="next">➡️</button>
+    </div>`, {
+    ...baseHandlers(),
+    hear: () => talk([x.w, { rate: .85 }]),
+    next: () => done(),
+    mic: async () => {
+      if (busy) return; busy = true;
+      const btn = $('#micBtn'), hint = $('#micHint'); const nav = navTok;
+      stopSpeech();
+      try {
+        btn.textContent = '🔴'; btn.classList.add('recording'); hint.textContent = '듣고 있어요… 말해보세요!';
+        const url = await recordClip(3200);
+        if (nav !== navTok) return;
+        btn.textContent = '🎤'; btn.classList.remove('recording'); hint.textContent = '내 목소리 듣는 중 👂';
+        const a = new Audio(url); await a.play().catch(() => {});
+        await new Promise(r => { a.onended = r; setTimeout(r, 4500); });
+        if (nav !== navTok) return;
+        sfx.ok(); addStars(1, btn); confetti(15);
+        hint.textContent = '멋지게 말했어요! ⭐';
+        await talk(rand(['Wonderful!', 'Great talking!', 'I love your voice!', 'Wow, you said it!']));
+      } catch (e) {
+        hint.textContent = '마이크를 쓸 수 없어요. 그냥 소리 내어 따라 해도 좋아요!';
+        btn.textContent = '🎤'; btn.classList.remove('recording');
+      }
+      busy = false;
+    },
+  });
+  talk([x.w, { rate: .85 }], 500, [x.w, { rate: .85 }], 300, 'Your turn!');
+}
+
+/* ---------------- 제니와 대화하기 (말하기 마을) ---------------- */
+function showTalkMenu() {
+  const keys = Object.keys(TALKS);
+  render(topbar() + jennySays("Let's talk!", '제니가 물어보면 그림을 눌러 대답해요', 130) + `
+    <div class="book-grid">${keys.map(k => `<button class="book" data-a="t" data-k="${k}"><span class="cover" style="font-size:80px">${SENTENCES[k].icon}</span>
+      <span class="bt en">${esc(SENTENCES[k].title)}</span><span class="bk">${esc(SENTENCES[k].ko)}</span></button>`).join('')}</div>`, {
+    ...baseHandlers(),
+    t: (b) => talkGame(b.dataset.k, null, () => { markAct('talk'); rewardScreen({ mini: true, stars: 2 }); }),
+  });
+  say("Let's talk!");
+}
+function talkGame(key, ctx, onDone) {
+  const T = TALKS[key]; const done = onDone || ctx.next;
+  const top = () => (ctx ? topbar(ctx) : topbar());
+  // 열린 질문: 정답 없음 — 아이가 고른 것을 제니가 문장으로 말해줌
+  if (T.open) {
+    const items = SENTENCES[T.open].items.map(W);
+    let round = 0;
+    const ask = () => {
+      if (round >= 2) { markAct('talk'); return done(); }
+      const q = round === 0 ? T.q : 'And what else?';
+      round++;
+      render(top() + `${jennySays(q, T.ko, 140)}
+        <div class="center"><div class="choices ${items.length === 4 ? 'four' : ''}">${items.map((c, i) => `<button class="card choice" data-a="pick" data-i="${i}" ${picStyle(c, 'min(14vh,120px)')}>${pic(c)}</button>`).join('')}</div>
+        <div class="hint">무엇이든 골라도 정답이에요!</div></div>`, {
+        ...baseHandlers(),
+        jenny: () => talk(q),
+        pick: async (b) => {
+          const c = items[+b.dataset.i]; b.classList.add('right'); sfx.ok();
+          if (await talk(c.w, 300, T.reply)) sayItStep(c, ctx, ask, 'Your turn!');
+        },
+      });
+      talk(q);
+    };
+    return ask();
+  }
+  // 문답: 그림을 보고 대답 / 숨바꼭질
+  let r = 0;
+  const round = () => {
+    if (r >= T.rounds.length) { markAct('talk'); return done(); }
+    const [show, q, qko, choices, model] = T.rounds[r++];
+    const hideAt = T.hide ? Math.floor(Math.random() * choices.length) : -1;
+    let solved = false, wrongs = 0;
+    render(top() + `${jennySays(q, qko, 130)}
+      <div class="center">
+        ${T.hide ? '' : `<div class="card" style="font-size:min(18vh,150px);padding:10px 40px">${show}</div>`}
+        <div class="choices">${choices.map((c, i) => `<button class="card choice" data-a="pick" data-i="${i}">${c[0]}</button>`).join('')}</div>
+      </div>`, {
+      ...baseHandlers(),
+      jenny: () => talk(q),
+      pick: async (b) => {
+        if (solved) return;
+        const i = +b.dataset.i, c = choices[i];
+        if (T.hide) {
+          await talk(c[1]);
+          if (i === hideAt) {
+            solved = true; b.textContent = show; b.classList.add('right'); sfx.ok(); addStars(1, b);
+            if (await talk('Yes! ' + model)) sayItStep({ w: model, e: show, ko: '여기 있다!' }, ctx, round, 'Your turn!');
+          } else { b.style.opacity = .45; sfx.soft(); talk('No! Not here.'); }
+          return;
+        }
+        if (c[2]) {
+          solved = true; b.classList.add('right'); sfx.ok(); if (!wrongs) addStars(1, b);
+          if (await talk(c[1], 200, model)) sayItStep({ w: model, e: show }, ctx, round, 'Your turn!');
+        } else {
+          wrongs++; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); sfx.soft();
+          talk('Hmm, look again!');
+          if (wrongs >= 2) app.querySelectorAll('.choice')[choices.findIndex(x => x[2])]?.classList.add('hint');
+        }
+      },
+    });
+    talk(q);
+  };
+  round();
 }
 
 /* ---------------- 스티커북 ---------------- */
@@ -1048,7 +1254,7 @@ function showParent() {
 
     <div class="parent-grid">
       <div class="panel"><h3>📚 진도 관리</h3>
-        <p class="desc">Day 0 → 알파벳 A–Z(복습 포함) → 주제 단어 → 문장, 이후엔 맞춤 복습이 계속 이어져요.</p>
+        <p class="desc">모국어처럼 배워요: <b>듣기 나라</b>(일상 이야기·단어, 6주) → <b>말하기 마을</b>(제니와 대화) → <b>읽기 나라</b>(알파벳·파닉스) → 맞춤 복습이 계속 이어져요.</p>
         <div class="row"><select id="daySel" style="flex:1">${CURRICULUM.map((l, i) => `<option value="${i}" ${i === S.dayIndex ? 'selected' : ''}>Day ${i} · ${esc(lessonLabel(l).ko)} (${esc(lessonLabel(l).en)})</option>`).join('')}${S.dayIndex >= CURRICULUM.length ? `<option selected value="${S.dayIndex}">Day ${S.dayIndex} · 무지개 복습</option>` : ''}</select></div>
         <div class="row"><button class="btn" data-a="setDay">이 수업으로 이동</button>
         <label class="row" style="margin:0"><input type="checkbox" id="oneDay" ${S.settings.oneLessonPerDay ? 'checked' : ''}> 하루에 새 수업 1개만</label></div></div>
@@ -1059,6 +1265,7 @@ function showParent() {
         <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '보통 (추천)'], [.9, '조금 빠르게'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
         <div class="row">목소리 <select id="vc" style="max-width:240px"><option value="">자동 선택</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="sk" ${S.settings.showKorean ? 'checked' : ''}> 한국어 뜻 함께 보여주기</label></div>
+        <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="mic" ${S.settings.useMic ? 'checked' : ''}> 따라 말하기 녹음 🎤 (녹음은 저장되지 않아요)</label></div>
         <button class="btn" data-a="saveSet">설정 저장</button></div>
     </div>
 
@@ -1094,7 +1301,7 @@ function showParent() {
     setDay: () => { S.dayIndex = +$('#daySel').value; S.lastLessonIdx = null; today().lesson = false; save(); toast('진도를 변경했어요'); showParent(); },
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
     saveSet: () => {
-      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, oneLessonPerDay: $('#oneDay').checked });
+      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, oneLessonPerDay: $('#oneDay').checked });
       S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); save(); toast('저장했어요');
     },
     addW: async () => {

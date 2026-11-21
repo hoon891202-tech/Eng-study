@@ -97,31 +97,6 @@ const SENTENCES = {
            items: [['I can jump!', '🦘', '나는 점프할 수 있어!', 'jump'], ['I can run!', '🏃', '나는 달릴 수 있어!', 'run'], ['I can sing!', '🎤', '나는 노래할 수 있어!', 'sing'], ['I can dance!', '💃', '나는 춤출 수 있어!', 'dance']] },
 };
 
-/* ---------- 커리큘럼 (Day 0부터 계속 늘어남) ---------- */
-function buildCurriculum() {
-  const days = [];
-  days.push({ type: 'theme', key: 'hello', stage: 0 });               // Day 0: 제니 만나기
-  ALPHABET.forEach((a, i) => {                                          // Stage 1: 알파벳
-    days.push({ type: 'letter', key: a.L, stage: 1 });
-    if ((i + 1) % 5 === 0 || i === 25) {
-      const from = i === 25 ? 21 : i - 4; // 마지막 복습은 V–Z
-      days.push({ type: 'review', letters: ALPHABET.slice(from, i + 1).map(x => x.L), stage: 1 });
-    }
-  });
-  Object.keys(THEMES).filter(k => k !== 'hello')                       // Stage 2: 주제 단어
-    .forEach(k => days.push({ type: 'theme', key: k, stage: 2 }));
-  Object.keys(SENTENCES).forEach(k => days.push({ type: 'sentence', key: k, stage: 3 })); // Stage 3: 문장
-  return days;
-}
-const CURRICULUM = buildCurriculum();
-const STAGES = [
-  { n: 0, title: 'Hello, Jenny!', ko: '제니 만나기' },
-  { n: 1, title: 'ABC Land', ko: '알파벳 나라' },
-  { n: 2, title: 'Word Forest', ko: '단어 숲' },
-  { n: 3, title: 'Talking Town', ko: '말하기 마을' },
-  { n: 4, title: 'Rainbow Review', ko: '무지개 복습 (계속)' },
-];
-
 /* ---------- 영상 추천 ---------- */
 const VIDEOS = {
   songs: [
@@ -149,6 +124,7 @@ const VIDEOS = {
 /* ---------- 제니 그림책 (자체 창작, 반복 패턴) ---------- */
 // p: 페이지 [영어 문장, 한국어, [[그림, 단어], ...]] — 그림을 누르면 단어를 읽어줘요
 const STORIES = [
+  /* ---- 패턴 그림책 ---- */
   { id: 'carrot', title: 'Where Is My Carrot?', ko: '내 당근 어디 있지?', cover: '🥕', stage: 0, pattern: 'Is it ___? No! / Yes!',
     p: [['This is Jenny.', '이건 제니예요.', [['🐰', 'Jenny']]],
         ['Jenny is hungry. Where is my carrot?', '제니는 배가 고파요. 내 당근 어디 있지?', [['🐰', 'Jenny'], ['❓', 'where']]],
@@ -208,6 +184,76 @@ const STORIES = [
         ['Good night, Mommy. Good night, Daddy.', '안녕히 주무세요, 엄마. 아빠.', [['👩', 'mommy'], ['👨', 'daddy']]],
         ['Jenny is sleepy. Yawn!', '제니는 졸려요. 하아암!', [['😴', 'sleepy'], ['🛏️', 'bed']]],
         ['Sweet dreams, Jenny.', '좋은 꿈 꿔, 제니.', [['💤', 'sleep'], ['🐰', 'Jenny']]]] },
+  /* ---- 일상 이야기 (듣기 나라) ---- */
+  { id: 'breakfast', title: 'Breakfast Time', ko: '아침 먹자', cover: '🍳', stage: 1, pattern: 'Here is some ___.', say: ['Thank you!', '고맙습니다!'],
+    p: [["I'm hungry, Mommy!", '엄마, 배고파요!', [['🐰', 'Jenny'], ['😋', 'hungry']]],
+        ['Here is some bread.', '여기 빵이 있어.', [['🍞', 'bread']]],
+        ['Here is some milk.', '여기 우유가 있어.', [['🥛', 'milk']]],
+        ['Here is an egg.', '여기 달걀이 있어.', [['🍳', 'egg']]],
+        ['Spoon, please!', '숟가락 주세요!', [['🥄', 'spoon']]],
+        ['All done! Thank you, Mommy!', '다 먹었어요! 고맙습니다, 엄마!', [['🍽️', 'plate'], ['👩', 'mommy'], ['💖', 'thank you']]]] },
+  { id: 'dress', title: 'Getting Dressed', ko: '옷 입자', cover: '👕', stage: 1, pattern: '___ on!', say: ['Ready!', '준비 완료!'],
+    p: [["Jenny, let's get dressed!", '제니, 옷 입자!', [['🐰', 'Jenny'], ['👚', 'clothes']]],
+        ['Shirt on!', '셔츠 입어요!', [['👕', 'shirt']]],
+        ['Pants on!', '바지 입어요!', [['👖', 'pants']]],
+        ['Socks on! One, two.', '양말 신어요! 하나, 둘.', [['🧦', 'socks'], ['🧦', 'socks']]],
+        ['Shoes on!', '신발 신어요!', [['👟', 'shoes']]],
+        ['Hat on! Are you ready? Ready!', '모자 써요! 준비됐니? 준비 완료!', [['🧢', 'hat'], ['🐰', 'Jenny']]]] },
+  { id: 'park', title: 'At the Park', ko: '공원에서', cover: '🛝', stage: 1, pattern: "Let's ___!", say: ["Let's go!", '가자!'],
+    p: [["Let's go to the park!", '공원에 가자!', [['🌳', 'park'], ['🐰', 'Jenny']]],
+        ['Up, up, up the stairs.', '계단을 올라가요, 영차 영차.', [['🪜', 'stairs'], ['⬆️', 'up']]],
+        ['Whee! Down the slide!', '와! 미끄럼틀 슝!', [['🛝', 'slide'], ['⬇️', 'down']]],
+        ['Swing, swing, high and low.', '그네를 타요, 높이 낮게.', [['🌳', 'tree'], ['🎢', 'swing']]],
+        ['Kick the ball! Kick!', '공을 차요! 뻥!', [['⚽', 'ball'], ['🦶', 'kick']]],
+        ['Time to go home. Bye-bye, park!', '집에 갈 시간이야. 안녕, 공원!', [['🏠', 'home'], ['👋', 'bye-bye']]]] },
+  { id: 'bath', title: 'Bath Time', ko: '목욕 시간', cover: '🛁', stage: 1, pattern: '___, ___!', say: ['All clean!', '깨끗해!'],
+    p: [["It's bath time!", '목욕할 시간이야!', [['🛁', 'bath']]],
+        ['Turn on the water. Splash!', '물을 틀어요. 첨벙!', [['🚿', 'shower'], ['💧', 'water']]],
+        ['Bubbles, bubbles! Pop, pop!', '거품, 거품! 퐁, 퐁!', [['🫧', 'bubbles'], ['🫧', 'bubbles'], ['🫧', 'bubbles']]],
+        ['Wash, wash, wash my ears.', '쓱쓱 귀를 씻어요.', [['🧼', 'soap'], ['👂', 'ears']]],
+        ['Hello, Ducky! Quack, quack!', '안녕, 오리야! 꽥꽥!', [['🦆', 'duck']]],
+        ['Dry, dry with a towel. All clean!', '수건으로 닦아요. 깨끗해!', [['🧺', 'towel'], ['✨', 'clean']]]] },
+  { id: 'rain', title: 'Rainy Day', ko: '비 오는 날', cover: '☔', stage: 1, pattern: 'Put on my ___.', say: ["It's raining!", '비가 와요!'],
+    p: [["Look! It's raining.", '봐! 비가 와요.', [['🌧️', 'rain']]],
+        ['Put on my raincoat.', '우비를 입어요.', [['🧥', 'raincoat']]],
+        ['Put on my boots.', '장화를 신어요.', [['👢', 'boots']]],
+        ['Open my umbrella.', '우산을 펴요.', [['☂️', 'umbrella']]],
+        ['Jump in the puddle! Splash!', '물웅덩이에 점프! 첨벙!', [['💦', 'splash'], ['🐸', 'frog']]],
+        ['The sun is out again. Hello, sun!', '해가 다시 나왔어요. 안녕, 해님!', [['☀️', 'sun'], ['🌈', 'rainbow']]]] },
+  { id: 'shop', title: 'At the Store', ko: '가게에서', cover: '🛒', stage: 1, pattern: 'I need ___.', say: ['Just one!', '딱 하나만!'],
+    p: [["Let's go shopping!", '장 보러 가자!', [['🛒', 'cart'], ['🐰', 'Jenny']]],
+        ['I need milk.', '우유가 필요해요.', [['🥛', 'milk']]],
+        ['I need apples.', '사과가 필요해요.', [['🍎', 'apple'], ['🍎', 'apple']]],
+        ['Can I have a cookie? Okay, just one!', '쿠키 사도 돼요? 그래, 딱 하나만!', [['🍪', 'cookie']]],
+        ['Beep! Thank you!', '삑! 감사합니다!', [['💳', 'card'], ['🧾', 'receipt']]],
+        ["Let's go home.", '집에 가자.', [['🏠', 'home']]]] },
+  { id: 'cleanup', title: 'Clean Up!', ko: '정리하자!', cover: '🧸', stage: 1, pattern: '___ in the ___.', say: ['All done!', '다 했다!'],
+    p: [['Oh no! What a mess!', '이런! 엉망이야!', [['🧸', 'teddy bear'], ['🧱', 'blocks'], ['📚', 'books']]],
+        ['Blocks in the box.', '블록은 상자에.', [['🧱', 'blocks'], ['📦', 'box']]],
+        ['Books on the shelf.', '책은 책장에.', [['📚', 'books']]],
+        ['Teddy on the bed.', '곰인형은 침대에.', [['🧸', 'teddy bear'], ['🛏️', 'bed']]],
+        ['Clean up, clean up! All done!', '정리, 정리! 다 했다!', [['✨', 'clean'], ['🐰', 'Jenny']]],
+        ['Good job, Jenny!', '잘했어, 제니!', [['👏', 'good job'], ['⭐', 'star']]]] },
+  { id: 'bus', title: "Let's Go by Bus", ko: '버스 타고 가요', cover: '🚌', stage: 1, pattern: 'Stop! / Go!', say: ['Here we are!', '도착!'],
+    p: [['We go by bus. Beep, beep!', '버스 타고 가요. 빵빵!', [['🚌', 'bus']]],
+        ['The wheels go round and round.', '바퀴가 빙글빙글 돌아요.', [['🛞', 'wheel'], ['🛞', 'wheel']]],
+        ['Stop! Red light.', '멈춰! 빨간 불.', [['🔴', 'red'], ['🛑', 'stop']]],
+        ['Go! Green light.', '출발! 초록 불.', [['🟢', 'green'], ['🚌', 'bus']]],
+        ['Here we are! Hello, Grandma!', '도착! 안녕하세요, 할머니!', [['🏡', 'house'], ['👵', 'grandma']]]] },
+  { id: 'friend', title: 'Hello, Friend!', ko: '친구야, 안녕!', cover: '🐻', stage: 1, pattern: "Let's ___!", say: ["Let's play!", '같이 놀자!'],
+    p: [['Ding-dong! Who is it?', '딩동! 누구세요?', [['🚪', 'door'], ['🔔', 'bell']]],
+        ["It's Bear! Hello, Bear!", '곰이야! 안녕, 곰아!', [['🐻', 'bear']]],
+        ["Let's play!", '같이 놀자!', [['🐰', 'Jenny'], ['🐻', 'bear'], ['🧩', 'puzzle']]],
+        ['My turn. Your turn.', '내 차례. 네 차례.', [['🎲', 'dice'], ['🙋', 'turn']]],
+        ["Let's share the cookies!", '쿠키를 나눠 먹자!', [['🍪', 'cookie'], ['🍪', 'cookie']]],
+        ['Bye, Bear! See you tomorrow!', '안녕, 곰아! 내일 또 만나!', [['👋', 'bye'], ['🐻', 'bear']]]] },
+  { id: 'birthday', title: 'Happy Birthday, Jenny!', ko: '생일 축하해, 제니!', cover: '🎂', stage: 1, pattern: 'Happy birthday!', say: ['Happy birthday!', '생일 축하해!'],
+    p: [["Today is Jenny's birthday!", '오늘은 제니의 생일이에요!', [['🐰', 'Jenny'], ['🎉', 'party']]],
+        ['Here is a cake.', '여기 케이크가 있어요.', [['🎂', 'cake']]],
+        ['Three candles. One, two, three!', '초가 세 개. 하나, 둘, 셋!', [['🕯️', 'candle'], ['🕯️', 'candle'], ['🕯️', 'candle']]],
+        ['Happy birthday to you!', '생일 축하합니다!', [['🎵', 'song'], ['🎈', 'balloon']]],
+        ['Make a wish. Blow! Whoo!', '소원을 빌어요. 후~!', [['🌬️', 'blow'], ['⭐', 'wish']]],
+        ['Open the present. Wow! A teddy bear!', '선물을 열어요. 와! 곰인형이다!', [['🎁', 'present'], ['🧸', 'teddy bear']]]] },
 ];
 
 /* ---------- 스티커 (보상) ---------- */
@@ -216,15 +262,84 @@ const STICKERS = ['🐰', '🥕', '🌈', '⭐', '🦄', '🍓', '🎈', '🌸',
   '🐙', '🍦', '🦒', '🐠', '🎠', '🪅', '🌷', '🐝', '🦖', '🏰'];
 
 /* ---------- 요일별 활동 ---------- */
-// days: [일,월,화,수,목,금,토]
+// days: [일,월,화,수,목,금,토] — 알파벳·따라쓰기는 '읽기 나라' 전까지 기본 꺼둠 (언제든 홈에서 할 수 있음)
 const ACTIVITIES = {
   lesson:  { ko: '오늘의 수업', en: "Today's Lesson", icon: '📖', days: [1, 1, 1, 1, 1, 1, 1] },
-  book:    { ko: '제니 그림책', en: 'Storybook', icon: '📚', days: [1, 1, 1, 1, 1, 1, 1] },
-  abc:     { ko: '알파벳', en: 'ABC', icon: '🔤', days: [0, 1, 0, 1, 0, 1, 0] },
-  trace:   { ko: '따라쓰기', en: 'Tracing', icon: '✏️', days: [0, 1, 0, 1, 0, 1, 0] },
-  game:    { ko: '게임 놀이', en: 'Games', icon: '🎮', days: [0, 0, 1, 0, 1, 0, 1] },
-  mywords: { ko: '우리 단어', en: 'My Words', icon: '💝', days: [0, 0, 1, 0, 1, 0, 0] },
+  listen:  { ko: '듣기 시간', en: 'Listening', icon: '🎧', days: [1, 1, 1, 1, 1, 1, 1] },
+  book:    { ko: '제니 그림책', en: 'Storybook', icon: '📚', days: [1, 0, 1, 0, 1, 0, 1] },
+  talk:    { ko: '제니와 대화', en: 'Talk', icon: '💬', days: [0, 1, 0, 1, 0, 1, 0] },
+  game:    { ko: '게임 놀이', en: 'Games', icon: '🎮', days: [0, 1, 0, 1, 0, 1, 0] },
+  mywords: { ko: '우리 단어', en: 'My Words', icon: '💝', days: [0, 0, 1, 0, 0, 0, 0] },
   review:  { ko: '복습', en: 'Review', icon: '🔁', days: [0, 0, 0, 0, 0, 0, 1] },
-  song:    { ko: '노래 시간', en: 'Songs', icon: '🎵', days: [1, 1, 0, 1, 0, 1, 0] },
-  story:   { ko: '동화·영상', en: 'Stories', icon: '📺', days: [1, 1, 1, 1, 1, 1, 1] },
+  song:    { ko: '노래 시간', en: 'Songs', icon: '🎵', days: [1, 0, 1, 0, 1, 0, 0] },
+  story:   { ko: '동화·영상', en: 'Videos', icon: '📺', days: [1, 1, 1, 1, 1, 1, 1] },
+  abc:     { ko: '알파벳', en: 'ABC', icon: '🔤', days: [0, 0, 0, 0, 0, 0, 0] },
+  trace:   { ko: '따라쓰기', en: 'Tracing', icon: '✏️', days: [0, 0, 0, 0, 0, 0, 0] },
 };
+
+// 기존 그림책의 핵심 한마디 (따라 말하기)
+const KEY_PHRASES = {
+  carrot: ['Here it is!', '여기 있다!'], farm: ['Hello!', '안녕!'], morning: ['Good morning!', '좋은 아침!'],
+  jump: ['I can jump!', '나는 뛸 수 있어!'], color: ['Look! A rainbow!', '봐! 무지개다!'], yummy: ['Yummy!', '맛있다!'],
+  feel: ['I am happy!', '나는 기뻐!'], night: ['Good night!', '잘 자!'],
+};
+STORIES.forEach(b => { if (!b.say) b.say = KEY_PHRASES[b.id] || ['Hello!', '안녕!']; });
+
+/* ---------- 제니와 대화하기 (말하기 마을 롤플레이) ---------- */
+// open: 정답 없이 아이가 고른 것을 문장으로 말해줌 / rounds: [보여줄 그림, 질문, 한국어, [[그림, 대답, 정답여부]], 모범 문장]
+// hide: 숨바꼭질 — 숨은 곳을 찾으면 "Here it is!"
+const TALKS = {
+  like:  { q: 'What do you like?', ko: '너는 뭘 좋아해?', open: 'like', reply: 'Me too!' },
+  this:  { rounds: [['🐱', 'Is this a dog?', '이건 강아지야?', [['👍', 'Yes!', 0], ['👎', 'No!', 1]], 'No! This is a cat.'],
+                    ['🚗', 'Is this a car?', '이건 자동차야?', [['👍', 'Yes!', 1], ['👎', 'No!', 0]], 'Yes! This is a car.'],
+                    ['⚽', 'Is this a banana?', '이건 바나나야?', [['👍', 'Yes!', 0], ['👎', 'No!', 1]], 'No! This is a ball.']] },
+  color: { rounds: [['🍎', 'What color is it?', '무슨 색이야?', [['🔴', 'Red!', 1], ['🔵', 'Blue!', 0], ['🟡', 'Yellow!', 0]], 'It is red.'],
+                    ['🍌', 'What color is it?', '무슨 색이야?', [['🟢', 'Green!', 0], ['🟡', 'Yellow!', 1], ['🔴', 'Red!', 0]], 'It is yellow.'],
+                    ['🐸', 'What color is it?', '무슨 색이야?', [['🔵', 'Blue!', 0], ['🔴', 'Red!', 0], ['🟢', 'Green!', 1]], 'It is green.']] },
+  feel:  { q: 'How are you today?', ko: '오늘 기분이 어때?', open: 'feel', reply: 'I see! Thank you for telling me.' },
+  want:  { q: 'What do you want?', ko: '뭐가 필요해?', open: 'want', reply: 'Here you are!' },
+  where: { hide: true, rounds: [['🐰', 'Where is the bunny?', '토끼 어디 있지?', [['🛏️', 'Under the bed?'], ['📦', 'In the box?'], ['🌳', 'Behind the tree?']], 'Here it is!'],
+                                ['🦆', 'Where is the duck?', '오리 어디 있지?', [['🪑', 'Under the chair?'], ['🎒', 'In the bag?'], ['🚗', 'In the car?']], 'Here it is!']] },
+  many:  { rounds: [['🦆🦆', 'How many ducks?', '오리가 몇 마리야?', [['1️⃣', 'One!', 0], ['2️⃣', 'Two!', 1], ['3️⃣', 'Three!', 0]], 'Two ducks!'],
+                    ['⭐⭐⭐', 'How many stars?', '별이 몇 개야?', [['2️⃣', 'Two!', 0], ['3️⃣', 'Three!', 1], ['4️⃣', 'Four!', 0]], 'Three stars!'],
+                    ['🍎', 'How many apples?', '사과가 몇 개야?', [['1️⃣', 'One!', 1], ['2️⃣', 'Two!', 0], ['5️⃣', 'Five!', 0]], 'One apple!']] },
+  can:   { q: 'What can you do?', ko: '너는 뭘 할 수 있어?', open: 'can', reply: 'Wow! Show me!' },
+};
+
+/* ---------- 커리큘럼: 듣기 → 말하기 → 읽기 (Day 0부터 계속 늘어남) ---------- */
+// 아이가 모국어를 배우듯: 일상 이야기를 충분히 듣고(귀) → 짧은 대화로 말하고(입) → 마지막에 글자(눈)
+function buildCurriculum() {
+  const d = [{ type: 'theme', key: 'hello', stage: 0 }];                // Day 0: 제니 만나기
+  const listen = [                                                       // Stage 1: 듣기 나라
+    ['story', 'morning'], ['theme', 'family'], ['story', 'breakfast'], ['theme', 'food'], ['story', 'carrot'], ['story', 'dress'],
+    ['theme', 'clothes'], ['story', 'farm'], ['theme', 'animals'], ['story', 'park'], ['theme', 'actions'], ['story', 'jump'],
+    ['story', 'bath'], ['theme', 'body'], ['story', 'rain'], ['theme', 'weather'], ['story', 'color'], ['theme', 'colors'],
+    ['story', 'yummy'], ['theme', 'numbers'], ['story', 'shop'], ['theme', 'fruits'], ['story', 'feel'], ['theme', 'feelings'],
+    ['story', 'cleanup'], ['theme', 'toys'], ['story', 'bus'], ['theme', 'vehicles'], ['story', 'friend'], ['theme', 'shapes'],
+    ['story', 'birthday'], ['theme', 'sea'], ['story', 'night'], ['theme', 'nature'], ['theme', 'opposites'],
+  ];
+  const heard = [];
+  listen.forEach(([type, key], i) => {
+    d.push({ type, key, stage: 1 });
+    if (type === 'story') heard.push(key);
+    if ((i + 1) % 6 === 0) d.push({ type: 'relisten', stories: heard.slice(-2), stage: 1 }); // 다시 듣기 (반복 노출)
+  });
+  Object.keys(SENTENCES).forEach(k => d.push({ type: 'sentence', key: k, stage: 2 })); // Stage 2: 말하기 마을
+  ALPHABET.forEach((a, i) => {                                                          // Stage 3: 읽기 나라 (ABC)
+    d.push({ type: 'letter', key: a.L, stage: 3 });
+    if ((i + 1) % 5 === 0 || i === 25) {
+      const from = i === 25 ? 21 : i - 4; // 마지막 복습은 V–Z
+      d.push({ type: 'review', letters: ALPHABET.slice(from, i + 1).map(x => x.L), stage: 3 });
+    }
+  });
+  return d;
+}
+const CURRICULUM_VERSION = 2;
+const CURRICULUM = buildCurriculum();
+const STAGES = [
+  { n: 0, title: 'Hello, Jenny!', ko: '제니 만나기' },
+  { n: 1, title: 'Listening Land', ko: '듣기 나라 · 귀가 열려요' },
+  { n: 2, title: 'Talking Town', ko: '말하기 마을 · 입이 열려요' },
+  { n: 3, title: 'ABC Land', ko: '읽기 나라 · 글자를 만나요' },
+  { n: 4, title: 'Rainbow Review', ko: '무지개 복습 (계속)' },
+];

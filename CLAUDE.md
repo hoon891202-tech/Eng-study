@@ -14,6 +14,10 @@
 ## 교육 설계 원칙 (모든 기능에 적용)
 잉글리시 에그 같은 유아 영어 프로그램의 **교육 방식**을 참고하되, 캐릭터·이야기·그림·노래는 전부 **자체 제작**한다 (기존 작품 복제 금지).
 
+0. **모국어처럼: 듣기 → 말하기 → 읽기** — 커리큘럼 순서의 뼈대. 글자(ABC)는 귀와 입이 열린 뒤 마지막 단계.
+   - 듣기 나라(Stage 1): 일상 이야기를 통째로 듣고, 그 속 단어를 그림으로 만남. 말하기는 권유만.
+   - 말하기 마을(Stage 2): 제니가 묻고 아이가 그림으로 대답 → 제니가 문장으로 말해줌 → 따라 말하기(녹음, 채점 없음).
+   - 읽기 나라(Stage 3): 이미 들어서 아는 단어로 알파벳·파닉스.
 1. **부담 없게** — 틀려도 벌점·실패 화면 없음. "Try again" 대신 부드러운 힌트, 두 번 틀리면 정답이 살짝 흔들려 알려줌. 타이머로 쫓지 않음.
 2. **듣기 먼저 (Input first)** — 말하기를 강요하지 않는다. 충분히 듣고, "Say it with me!"는 권유일 뿐.
 3. **반복 패턴** — 같은 문장 틀에 단어만 바꿔 반복 ("Hello, Cow! / Hello, Duck!"). 이야기·게임·수업이 같은 단어를 다시 만나게.
@@ -26,7 +30,7 @@
 ```
 index.html            진입점 (data.js → app.js 순서로 로드)
 css/style.css         디자인 토큰(:root), 큰 터치 영역(최소 64px)
-js/data.js            모든 학습 콘텐츠: ALPHABET, THEMES, SENTENCES, STORIES, VIDEOS, STICKERS, ACTIVITIES, 커리큘럼
+js/data.js            모든 학습 콘텐츠: ALPHABET, THEMES, SENTENCES, STORIES, TALKS, VIDEOS, STICKERS, ACTIVITIES, 커리큘럼(맨 아래)
 js/app.js             화면(render + data-a 핸들러), TTS(say/talk), 게임, 부모님 메뉴
 sw.js                 오프라인 캐시 — 배포할 때 CACHE 버전 올리기
 ```
@@ -34,6 +38,7 @@ sw.js                 오프라인 캐시 — 배포할 때 CACHE 버전 올리�
 - 음성: `say(text)`(Promise), `talk(...줄)`(순서대로, 화면 바뀌면 자동 중단). 영어는 `en-US`, 한국어는 `sayKo`.
 - 저장: `localStorage`의 `S` 객체 하나 (`save()`). 새 필드는 `defaultState()`에 추가하면 기존 사용자도 자동 병합.
 - 아이 이름 등 개인정보는 기기에만 저장 — **저장소에 커밋하지 않는다.**
+- 커리큘럼 순서를 바꾸면 `CURRICULUM_VERSION`을 올린다 → 기존 사용자는 진도·요일표만 처음부터(별·스티커·기록 유지).
 
 ## 작업 규칙
 - 개발 브랜치: `ccr-3a961d81-qy0igz` (여기에 커밋·푸시).

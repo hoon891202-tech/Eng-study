@@ -48,6 +48,8 @@ input, select { font: inherit; -webkit-user-select: text; user-select: text; }
   box-shadow: var(--shadow); font-size: 30px; display: grid; place-items: center; flex: none;
 }
 .icon-btn:active, .big-btn:active, .tile:active, .card:active { transform: translateY(3px) scale(.98); }
+.round-btn.recording { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 139, .6); } 50% { box-shadow: 0 0 0 22px rgba(255, 107, 139, 0); } }
 .progress-dots { display: flex; gap: 8px; flex: 1; justify-content: center; }
 .progress-dots span { font-size: 30px; opacity: .25; transition: .3s; }
 .progress-dots span.on { opacity: 1; transform: scale(1.1); }
@@ -327,3 +329,7 @@ input, select { font: inherit; -webkit-user-select: text; user-select: text; }
   .word-card .w { font-size: 46px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---------- 따라 말하기 녹음 ---------- */
+.round-btn.recording { animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 139, .6); } 50% { box-shadow: 0 0 0 22px rgba(255, 107, 139, 0); } }
