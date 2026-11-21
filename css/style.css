@@ -541,3 +541,4 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
 @media (max-width: 560px) {
   .village { row-gap: 40px; }
 }
+.video-card { text-decoration: none; }

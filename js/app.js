@@ -809,12 +809,12 @@ function showABC() {
   const learned = new Set(CURRICULUM.slice(0, S.dayIndex).filter(l => l.type === 'letter').map(l => l.key));
   render(topbar() + jennySays('A, B, C! Tap a letter!', '글자를 누르면 읽는 법과 단어를 알려줘요', 120) + `
     <div class="abc-grid">${ALPHABET.map(a => `<button class="${learned.has(a.L) ? 'learned' : ''}" data-a="letter" data-l="${a.L}">${a.L}${a.L.toLowerCase()}<small>${a.name}</small></button>`).join('')}</div>
-    <div class="nav-row"><button class="btn" data-a="song" style="font-size:22px;padding:16px 26px">🎵 ABC 노래 보기</button>
+    <div class="nav-row"><a class="btn" data-a="song" href="${esc(yt('ABC song for kids Super Simple Songs'))}" target="_blank" rel="noopener" style="font-size:22px;padding:16px 26px;text-decoration:none">🎵 ABC 노래 보기</a>
     <button class="btn" data-a="trace" style="font-size:22px;padding:16px 26px;background:var(--mint)">✏️ 따라쓰기</button></div>`, {
     ...baseHandlers(),
     trace: () => showTraceMenu(),
     letter: (b) => { sfx.tap(); letterDetail(b.dataset.l); },
-    song: () => openYT(yt('ABC song for kids Super Simple Songs'), 'song'),
+    song: (b) => openYT(yt('ABC song for kids Super Simple Songs'), 'song', b),
   });
   say('A, B, C! Tap a letter!');
 }
@@ -856,7 +856,7 @@ function showLetterVideos(a) {
     `<div class="video-grid">${list.map((v, i) => videoCard(v, i)).join('')}</div>
     <div class="nav-row"><button class="btn ghost" data-a="back" style="font-size:22px">⬅️ 돌아가기</button></div>`, {
     ...baseHandlers(),
-    v: (b) => openYT(yt(list[+b.dataset.i].q), 'song'),
+    v: (b) => openYT(yt(list[+b.dataset.i].q), 'song', b),
     back: () => letterDetail(a.L),
   });
 }
@@ -907,7 +907,7 @@ function rewardScreen({ lesson, sticker, stars, mini }) {
       ${mini ? '' : '<button class="btn" data-a="more" style="font-size:24px;padding:18px 30px;background:var(--sky)">📺 영상 더 보기</button>'}</div>
     </div>`, {
     ...baseHandlers(),
-    v: (b) => { const v = recs[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), 'story'); },
+    v: (b) => { const v = recs[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), 'story', b); },
     more: () => showVideos('stories'),
     book: () => readBook(book),
   });
@@ -929,10 +929,13 @@ function recommend(lesson) {
   out.push(...shuffle(VIDEOS.stories).slice(0, 6 - out.length));
   return out.slice(0, 6);
 }
+// 유튜브 검색은 진짜 링크(<a>)로 — 팝업 차단·임베드 제한 환경에서도 새 탭으로 열림
 function videoCard(v, i) {
-  return `<button class="video-card ${v.fav ? 'fav' : ''}" data-a="v" data-i="${i}"><span class="emoji">${esc(v.e)}</span><span><div class="t">${esc(v.t)}</div><div class="k">${esc(v.ko)}${v.fav ? ' · 앱에서 재생' : ''}</div></span></button>`;
+  const inner = `<span class="emoji">${esc(v.e)}</span><span><div class="t">${esc(v.t)}</div><div class="k">${esc(v.ko)}${v.fav ? ' · 앱에서 재생' : ''}</div></span>`;
+  return v.yt ? `<button class="video-card fav" data-a="v" data-i="${i}">${inner}</button>`
+    : `<a class="video-card" href="${esc(yt(v.q))}" target="_blank" rel="noopener" data-a="v" data-i="${i}">${inner}</a>`;
 }
-function openYT(url, act) { if (act) markAct(act); window.open(url, '_blank', 'noopener'); }
+function openYT(url, act, el) { if (act) markAct(act); if (!el || el.tagName !== 'A') window.open(url, '_blank', 'noopener'); }
 function ytId(u) { const m = String(u).match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : null; }
 function playFav(v) {
   markAct(v.cat === 'song' ? 'song' : 'story'); stopSpeech();
@@ -953,7 +956,7 @@ function showVideos(cat) {
   render(topbar() + jennySays(t[0], t[1], 120) + `<div class="video-grid">${list.map((v, i) => videoCard(v, i)).join('')}</div>
     <p class="hint" style="text-align:center">⭐ 노란 카드는 부모님이 등록한 영상으로 앱 안에서 바로 재생돼요. 나머지는 유튜브 검색으로 열려요.</p>`, {
     ...baseHandlers(),
-    v: (b) => { const v = list[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), cat === 'songs' ? 'song' : 'story'); },
+    v: (b) => { const v = list[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), cat === 'songs' ? 'song' : 'story', b); },
   });
   say(t[0]);
 }
