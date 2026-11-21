@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 B · 제니의 마을</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #3A2E4F; --ink-2: #7D7290; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: 'Jua', sans-serif; color: var(--ink); height: 100vh; overflow: hidden; position: relative; background: linear-gradient(180deg, #A9DCFF 0%, #D9F0FF 45%, #EFF9FF 60%); }
+  .en { font-family: 'Fredoka', sans-serif; }
+  .scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .cloud { animation: drift 30s linear infinite alternate; }
+  @keyframes drift { to { transform: translateX(60px); } }
+  .top { position: absolute; top: 22px; left: 26px; right: 26px; display: flex; gap: 12px; align-items: center; z-index: 2; }
+  .top .sp { flex: 1; }
+  .pill { background: rgba(255,255,255,.92); border-radius: 999px; padding: 10px 20px; font-size: 22px; display: flex; gap: 8px; align-items: center; box-shadow: 0 4px 0 rgba(58,46,79,.08); }
+  .lv b { font-family: 'Fredoka'; color: #7B5CE0; }
+  .lv .bar { width: 120px; height: 12px; border-radius: 99px; background: #EEE7FA; overflow: hidden; }
+  .lv .bar i { display: block; height: 100%; width: 75%; background: #9C80F5; border-radius: 99px; }
+  .gear { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,.92); display: grid; place-items: center; }
+  .jenny { position: absolute; left: 60px; top: 360px; z-index: 2; }
+  .bubble { position: absolute; left: 330px; top: 380px; background: #fff; border-radius: 28px; padding: 16px 24px; font-size: 28px; z-index: 2; box-shadow: 0 5px 0 rgba(58,46,79,.08); }
+  .bubble::before { content: ''; position: absolute; left: -14px; bottom: 26px; border: 14px solid transparent; border-right-color: #fff; border-left: 0; }
+  .bubble small { display: block; font-size: 19px; color: var(--ink-2); margin-top: 4px; }
+  /* 오늘의 이야기: 표지판 */
+  .sign { position: absolute; right: 80px; top: 330px; width: 540px; z-index: 2; }
+  .sign .board { position: relative; background: #FFF6E5; border: 6px solid #C98B4E; border-radius: 30px; padding: 22px 26px; display: flex; gap: 20px; align-items: center; box-shadow: 0 8px 0 #A86C35; }
+  .sign .post { position: absolute; bottom: -120px; width: 22px; height: 130px; background: #C98B4E; border-radius: 6px; z-index: -1; }
+  .sign .t1 { font-family: 'Fredoka'; font-size: 20px; color: #B0743B; }
+  .sign .t2 { font-size: 40px; }
+  .sign .play { margin-left: auto; width: 88px; height: 88px; border-radius: 50%; background: #FF6B8A; display: grid; place-items: center; box-shadow: 0 6px 0 #E04A6C; flex: none; }
+  .sign .ribbon { position: absolute; top: -22px; left: 24px; background: #FF6B8A; color: #fff; padding: 6px 18px; border-radius: 12px; font-size: 20px; box-shadow: 0 4px 0 #E04A6C; }
+  /* 집들 */
+  .village { position: absolute; left: 18px; right: 18px; bottom: 26px; display: grid; grid-template-columns: repeat(10, 1fr); gap: 10px; align-items: end; z-index: 2; }
+  .house { display: flex; flex-direction: column; align-items: center; position: relative; }
+  .house .roof { width: 0; height: 0; border-left: 62px solid transparent; border-right: 62px solid transparent; margin-bottom: -6px; position: relative; }
+  .house .body { width: 108px; height: 106px; border-radius: 10px 10px 18px 18px; display: grid; place-items: center; box-shadow: inset 0 -10px 0 rgba(0,0,0,.06); }
+  .house .win { width: 82px; height: 82px; border-radius: 50%; background: #fff; display: grid; place-items: center; box-shadow: inset 0 -5px 0 rgba(0,0,0,.05); }
+  .house .label { margin-top: 8px; background: #fff; border-radius: 14px; padding: 5px 12px; font-size: 19px; box-shadow: 0 3px 0 rgba(58,46,79,.1); white-space: nowrap; }
+  .house .flag { position: absolute; top: -30px; left: 50%; display: flex; align-items: flex-start; }
+  .house .flag i { width: 4px; height: 36px; background: #7D5A3A; display: block; }
+  .house .flag b { background: #FFC23D; color: var(--ink); font-size: 14px; padding: 3px 8px; border-radius: 0 8px 8px 0; font-weight: 400; }
+  .house:nth-child(even) { margin-bottom: 26px; }
+  .week { position: absolute; left: 50%; transform: translateX(-50%); top: 110px; display: flex; gap: 10px; z-index: 2; background: rgba(255,255,255,.85); border-radius: 22px; padding: 10px 16px; align-items: center; font-size: 18px; color: var(--ink-2); }
+  .week span { width: 46px; text-align: center; }
+  .week span.now { color: var(--ink); background: #FFE3EA; border-radius: 12px; }
+  .week .stone { width: 34px; height: 34px; border-radius: 50%; background: #E9E2F0; margin: 0 auto 2px; display: grid; place-items: center; }
+</style></head>
+<body>
+<script src="shared.js"></script>
+<script>
+const roofs = [['#FF6B8A', '#FFE3EA', '#E04A6C'], ['#4DA8FF', '#E1F0FF', '#2E86E0'], ['#FFC23D', '#FFF2CF', '#E9A10F'], ['#3FC495', '#DDF7EC', '#26A275'], ['#A07CF5', '#EEE7FE', '#7C58DA']];
+document.body.innerHTML = `
+  <svg class="scene" viewBox="0 0 1366 1024" preserveAspectRatio="xMidYMax slice">
+    <circle cx="1220" cy="120" r="70" fill="#FFE07A"/><circle cx="1220" cy="120" r="100" fill="#FFE07A" opacity=".25"/>
+    <g class="cloud" fill="#fff"><ellipse cx="200" cy="140" rx="90" ry="34"/><ellipse cx="250" cy="118" rx="60" ry="40"/><ellipse cx="160" cy="122" rx="46" ry="30"/></g>
+    <g class="cloud" fill="#fff" opacity=".9"><ellipse cx="760" cy="90" rx="80" ry="28"/><ellipse cx="800" cy="72" rx="50" ry="32"/></g>
+    <path d="M0 640 C220 560 420 600 620 640 C860 690 1080 560 1366 600 V1024 H0Z" fill="#B7E6A0"/>
+    <path d="M0 720 C260 660 520 700 760 730 C1000 760 1200 690 1366 700 V1024 H0Z" fill="#8FD67F"/>
+    <path d="M0 820 C300 790 600 810 900 830 C1100 840 1250 810 1366 815 V1024 H0Z" fill="#74C66A"/>
+    ${[[120, 610], [980, 640], [1300, 600]].map(([x, y]) => `<g><rect x="${x - 7}" y="${y - 10}" width="14" height="50" rx="5" fill="#A0703F"/><circle cx="${x}" cy="${y - 30}" r="38" fill="#5DB85B"/><circle cx="${x - 18}" cy="${y - 18}" r="24" fill="#6CC56A"/></g>`).join('')}
+    ${[[300, 760], [560, 780], [1120, 770], [860, 800]].map(([x, y]) => `<g><circle cx="${x}" cy="${y}" r="7" fill="#FFF"/><circle cx="${x}" cy="${y}" r="3" fill="#FFC23D"/></g>`).join('')}
+  </svg>
+  <div class="top"><div class="pill lv"><b>Level ${MOCK.level}</b><div class="bar"><i></i></div></div>
+    <div class="pill">${icon('sun', 26, '#FFC23D', '#FF9F1C', '#FFF2CF')} ${MOCK.streak}일 연속</div><div class="sp"></div>
+    <div class="pill">${icon('sticker', 28, '#FFC23D', '#E9A10F', '#fff')} <b class="en">${MOCK.stars}</b></div><div class="gear">${icon('gear', 30, '#B9AECB')}</div></div>
+  <div class="jenny">${jenny(240)}</div>
+  <div class="bubble"><span class="en">Hi, ${MOCK.name}!</span><small>안녕 나현! 오늘은 어디 갈까?</small></div>
+  <div class="week">${MOCK.week.map((d, i) => `<span class="${i === MOCK.todayIdx ? 'now' : ''}"><div class="stone">${MOCK.done[i] ? icon('carrot', 26, '#FF9A3C', '#4CC38A', '#FFD3A8') : ''}</div>${d}</span>`).join('')}</div>
+  <div class="sign"><div class="post" style="left:60px"></div><div class="post" style="right:60px"></div>
+    <div class="board"><span class="ribbon">오늘의 이야기</span>${icon('sun', 92, '#FFC23D', '#FF9F1C', '#FFF2CF')}
+      <div><div class="t1">Day ${MOCK.day} · ${MOCK.stage}</div><div class="t2">${MOCK.lessonKo}</div><div class="t1">${MOCK.lessonEn}</div></div>
+      <div class="play">${icon('play', 40, '#fff')}</div></div></div>
+  <div class="village">${MOCK.tiles.map(([k, ko, en, t], i) => { const [c, l, d] = roofs[i % 5];
+    return `<div class="house">${t ? '<div class="flag"><i></i><b>오늘!</b></div>' : ''}<div class="roof" style="border-bottom:52px solid ${d}"></div>
+      <div class="body" style="background:${c}"><div class="win">${icon(k, 54, c, d, '#fff')}</div></div><div class="label">${ko}</div></div>`; }).join('')}</div>`;
+</script>
+</body></html>

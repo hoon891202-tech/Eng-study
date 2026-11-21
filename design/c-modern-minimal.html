@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>시안 C · 미니멀 모던</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Jua&display=swap" rel="stylesheet">
+<style>
+  /* 2색 체계: 바이올렛(메인) + 코랄(행동), 나머지는 같은 톤의 옅은 파스텔 */
+  :root { --violet: #5B4BDB; --violet-d: #4434B8; --coral: #FF6B6B; --ink: #241C4A; --ink-2: #807AA0; --bg: #F5F3FF; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: 'Jua', sans-serif; color: var(--ink); background: var(--bg); height: 100vh; overflow: hidden; padding: 26px; display: grid; grid-template-columns: 500px 1fr; gap: 22px; }
+  .en { font-family: 'Fredoka', sans-serif; }
+  .hero { background: var(--violet); border-radius: 44px; color: #fff; padding: 30px; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  .hero::before { content: ''; position: absolute; width: 420px; height: 420px; border-radius: 50%; background: #6E5FE6; right: -160px; top: 140px; }
+  .hero::after { content: ''; position: absolute; width: 180px; height: 180px; border-radius: 50%; background: #FFC23D; left: -50px; bottom: -60px; opacity: .9; }
+  .hero > * { position: relative; z-index: 1; }
+  .hero .row { display: flex; justify-content: space-between; align-items: center; }
+  .chip { background: rgba(255,255,255,.16); border-radius: 999px; padding: 8px 16px; font-size: 20px; display: flex; gap: 6px; align-items: center; }
+  .hero .day { font-family: 'Fredoka'; font-size: 22px; opacity: .8; margin-top: 26px; }
+  .hero h1 { font-size: 64px; font-weight: 400; line-height: 1.05; margin-top: 6px; }
+  .hero h2 { font-family: 'Fredoka'; font-weight: 500; font-size: 26px; opacity: .85; margin-top: 6px; }
+  .hero .jenny { margin: auto 0 0 10px; }
+  .say { position: absolute; left: 230px; bottom: 300px; background: #fff; color: var(--ink); border-radius: 24px 24px 24px 6px; padding: 14px 20px; font-size: 24px; }
+  .say small { display: block; font-family: 'Jua'; font-size: 17px; color: var(--ink-2); }
+  .hero .play { position: absolute; right: 30px; bottom: 30px; width: 120px; height: 120px; border-radius: 40px; background: var(--coral); display: grid; place-items: center; box-shadow: 0 8px 0 #D94C4C; }
+  .main { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+  .head { display: flex; align-items: center; gap: 14px; }
+  .head h3 { font-family: 'Fredoka'; font-size: 44px; font-weight: 600; }
+  .head p { color: var(--ink-2); font-size: 20px; }
+  .head .sp { flex: 1; }
+  .stat { background: #fff; border-radius: 22px; padding: 10px 18px; display: flex; align-items: center; gap: 8px; font-size: 22px; }
+  .stat b { font-family: 'Fredoka'; }
+  .gear { width: 58px; height: 58px; border-radius: 20px; background: #fff; display: grid; place-items: center; }
+  .grid { flex: 1; display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); gap: 16px; }
+  .t { border-radius: 34px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+  .t .lab { font-size: 26px; }
+  .t .en { font-size: 16px; color: var(--ink-2); }
+  .t.big { grid-column: span 2; flex-direction: row; align-items: center; justify-content: flex-start; gap: 18px; }
+  .t.big .lab { font-size: 32px; }
+  .t .dot { position: absolute; top: 18px; right: 18px; background: var(--coral); color: #fff; border-radius: 99px; font-size: 15px; padding: 4px 11px; }
+  .lvl { background: #fff; border-radius: 34px; padding: 16px 24px; display: flex; align-items: center; gap: 18px; }
+  .lvl b { font-family: 'Fredoka'; font-size: 28px; color: var(--violet); white-space: nowrap; }
+  .lvl .bar { flex: 1; height: 14px; border-radius: 99px; background: #ECE9FB; overflow: hidden; }
+  .lvl .bar i { display: block; width: 75%; height: 100%; border-radius: 99px; background: var(--violet); }
+  .lvl .wk { display: flex; gap: 8px; }
+  .lvl .wk span { width: 40px; height: 40px; border-radius: 14px; background: #F1EEFC; display: grid; place-items: center; font-size: 16px; color: var(--ink-2); }
+  .lvl .wk span.on { background: #FFE9D6; }
+  .lvl .wk span.now { outline: 3px solid var(--violet); }
+</style></head>
+<body>
+<script src="shared.js"></script>
+<script>
+const tints = { listen: ['#FFE4E4', '#FF6B6B', '#E04F4F'], book: ['#E4EEFF', '#4D8BFF', '#2F6BE0'], talk: ['#E8FAF1', '#2EC38A', '#1E9E6E'],
+  game: ['#FFF3D6', '#FFB21E', '#E0920A'], heart: ['#FFE6F2', '#FF5FA2', '#E04086'], review: ['#EEEAFE', '#7B6AF0', '#5B4BDB'],
+  song: ['#E2F7FB', '#22B5CF', '#1593AA'], video: ['#FFEDE3', '#FF8A4C', '#E06A2C'], abc: ['#F1F8E3', '#7CC23D', '#5EA121'], sticker: ['#FFF8D9', '#FFC23D', '#E9A10F'] };
+const tiles = MOCK.tiles.filter(t => t[0] !== 'sticker');
+document.body.innerHTML = `
+  <section class="hero">
+    <div class="row"><span class="chip">${icon('sun', 24, '#FFC23D', '#FF9F1C', '#FFF2CF')} ${MOCK.streak}일 연속</span><span class="chip en">Day ${MOCK.day}</span></div>
+    <div class="day">${MOCK.stage} · 오늘의 수업</div>
+    <h1>${MOCK.lessonKo}</h1><h2>${MOCK.lessonEn}</h2>
+    <div class="say"><span class="en">Let's listen!</span><small>같이 들어볼까?</small></div>
+    <div class="jenny">${jenny(230)}</div>
+    <div class="play">${icon('play', 56, '#fff')}</div>
+  </section>
+  <section class="main">
+    <div class="head"><div><h3>Hi, ${MOCK.name}!</h3><p>오늘은 뭐 하고 놀까?</p></div><div class="sp"></div>
+      <div class="stat">${icon('sticker', 30, '#FFC23D', '#E9A10F', '#fff')}<b>${MOCK.stars}</b></div><div class="gear">${icon('gear', 30, '#B5AED6')}</div></div>
+    <div class="grid">${tiles.map(([k, ko, en, t], i) => { const [bg, c, d] = tints[k]; const big = i < 2;
+      return `<div class="t ${big ? 'big' : ''}" style="background:${bg}">${t ? '<span class="dot">오늘</span>' : ''}${icon(k, big ? 96 : 70, c, d, '#fff')}<div><div class="lab">${ko}</div><div class="en">${en}</div></div></div>`; }).join('')}
+      <div class="t" style="background:${tints.sticker[0]}">${icon('sticker', 70, tints.sticker[1], tints.sticker[2], '#fff')}<div><div class="lab">스티커북</div><div class="en">12 / 40</div></div></div></div>
+    <div class="lvl"><b>Level ${MOCK.level}</b><div class="bar"><i></i></div>
+      <div class="wk">${MOCK.week.map((d, i) => `<span class="${MOCK.done[i] ? 'on' : ''} ${i === MOCK.todayIdx ? 'now' : ''}">${MOCK.done[i] ? icon('carrot', 26, '#FF9A3C', '#4CC38A', '#FFD3A8') : d}</span>`).join('')}</div></div>
+  </section>`;
+</script>
+</body></html>
