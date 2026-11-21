@@ -809,12 +809,12 @@ function showABC() {
   const learned = new Set(CURRICULUM.slice(0, S.dayIndex).filter(l => l.type === 'letter').map(l => l.key));
   render(topbar() + jennySays('A, B, C! Tap a letter!', '글자를 누르면 읽는 법과 단어를 알려줘요', 120) + `
     <div class="abc-grid">${ALPHABET.map(a => `<button class="${learned.has(a.L) ? 'learned' : ''}" data-a="letter" data-l="${a.L}">${a.L}${a.L.toLowerCase()}<small>${a.name}</small></button>`).join('')}</div>
-    <div class="nav-row"><a class="btn" data-a="song" href="${esc(yt('ABC song for kids Super Simple Songs'))}" target="_blank" rel="noopener" style="font-size:22px;padding:16px 26px;text-decoration:none">🎵 ABC 노래 보기</a>
+    <div class="nav-row"><button class="btn" data-a="song" style="font-size:22px;padding:16px 26px">🎵 ABC 노래 보기</button>
     <button class="btn" data-a="trace" style="font-size:22px;padding:16px 26px;background:var(--mint)">✏️ 따라쓰기</button></div>`, {
     ...baseHandlers(),
     trace: () => showTraceMenu(),
     letter: (b) => { sfx.tap(); letterDetail(b.dataset.l); },
-    song: (b) => openYT(yt('ABC song for kids Super Simple Songs'), 'song', b),
+    song: () => playVideo(vid('vD98OvvDNEs')),
   });
   say('A, B, C! Tap a letter!');
 }
@@ -847,16 +847,12 @@ function letterDetail(L) {
   intro();
 }
 function showLetterVideos(a) {
-  const list = [
-    { t: `Alphablocks ${a.L}`, ko: '알파블럭스', e: '🧱', q: `Alphablocks letter ${a.L}` },
-    { t: `Letter ${a.L} Song`, ko: '파닉스 노래', e: '🎵', q: `letter ${a.L} phonics song for kids` },
-    { t: `${a.L} is for ${a.words[0][0]}`, ko: '단어 노래', e: a.words[0][1], q: `${a.L} is for ${a.words[0][0]} song kids` },
-  ];
-  render(topbar() + jennySays(`Let's watch ${a.L} videos!`, `${a.L} 관련 재미있는 영상이에요 (유튜브가 열려요)`, 120) +
+  const list = [LETTER_VIDEOS[a.L], 'vD98OvvDNEs', 'kDdg2M1_EuE'].filter(Boolean).map(vid);
+  render(topbar() + jennySays(`Let's watch the letter ${a.L}!`, `${a.L} 영상을 골라요 (앱 안에서 재생돼요)`, 120) +
     `<div class="video-grid">${list.map((v, i) => videoCard(v, i)).join('')}</div>
     <div class="nav-row"><button class="btn ghost" data-a="back" style="font-size:22px">⬅️ 돌아가기</button></div>`, {
     ...baseHandlers(),
-    v: (b) => openYT(yt(list[+b.dataset.i].q), 'song', b),
+    v: (b) => playVideo(list[+b.dataset.i]),
     back: () => letterDetail(a.L),
   });
 }
@@ -901,13 +897,13 @@ function rewardScreen({ lesson, sticker, stars, mini }) {
       <div class="reward-stars">${'⭐'.repeat(Math.min(stars, 5))}</div>
       <h1 class="title"><span class="en">Great job, ${esc(childNameEn())}!</span>${esc(childName())}, 정말 잘했어요!</h1>
       ${mini ? '' : `<button class="big-btn" data-a="book" style="max-width:760px"><span class="emoji">${book.cover}</span><span><div class="t1">Story time · 제니 그림책</div><div class="t2">${esc(book.ko)}</div><div class="t1">${esc(book.title)}</div></span><span class="go">📖</span></button>`}
-      ${mini ? '' : `<h2 class="section-title">📺 오늘의 동화 · 영상 시간 <small class="hint">(유튜브가 열려요)</small></h2>
+      ${mini ? '' : `<h2 class="section-title">📺 오늘 배운 것과 어울리는 영상</h2>
       <div class="video-grid" style="width:100%">${recs.map((v, i) => videoCard(v, i)).join('')}</div>`}
       <div class="nav-row"><button class="btn" data-a="home" style="font-size:24px;padding:18px 30px">🏠 홈으로</button>
       ${mini ? '' : '<button class="btn" data-a="more" style="font-size:24px;padding:18px 30px;background:var(--sky)">📺 영상 더 보기</button>'}</div>
     </div>`, {
     ...baseHandlers(),
-    v: (b) => { const v = recs[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), 'story', b); },
+    v: (b) => playVideo(recs[+b.dataset.i]),
     more: () => showVideos('stories'),
     book: () => readBook(book),
   });
@@ -915,49 +911,77 @@ function rewardScreen({ lesson, sticker, stars, mini }) {
   sfx.fanfare(); confetti(50);
   talk(`Great job, ${childNameEn()}! You did it!`, ...(st ? [400, 'Here is a sticker for you!'] : []), ...(mini ? [] : [400, "Now, it's story time!"]));
 }
+// 영상 한 편 정보 (공식 채널 영상 라이브러리 VIDEO_LIB)
+function vid(id) { const v = VIDEO_LIB[id] || [id, '', 'song']; return { yt: id, t: v[0], ko: v[1], kind: v[2] }; }
+function lessonVideos(l) {
+  if (!l) return [];
+  if (l.type === 'letter') return [LETTER_VIDEOS[l.key]];
+  if (l.type === 'review') return l.letters.map(L => LETTER_VIDEOS[L]);
+  if (l.type === 'relisten') return l.stories.flatMap(k => LESSON_VIDEOS[k] || []);
+  if (l.type === 'sentence') return LESSON_VIDEOS['s:' + l.key] || [];
+  return LESSON_VIDEOS[l.key] || [];
+}
+const favVideos = () => S.favVideos.map(f => ({ yt: f.yt, t: f.title, ko: '부모님 추천', kind: f.cat === 'song' ? 'song' : 'peppa', fav: true }));
+// 수업 끝 추천: 오늘 수업 영상 → 부모님 추천 → 지금까지 배운 수업의 영상
 function recommend(lesson) {
-  const out = [];
-  const favs = shuffle(S.favVideos);
-  out.push(...favs.slice(0, 2).map(f => ({ t: f.title, ko: '부모님 추천', e: f.cat === 'song' ? '🎵' : '⭐', yt: f.yt, fav: true })));
-  if (lesson) {
-    if (lesson.type === 'letter') out.push({ t: `Alphablocks ${lesson.key}`, ko: `알파벳 ${lesson.key} 영상`, e: '🧱', q: `Alphablocks letter ${lesson.key}` });
-    else if (lesson.type === 'theme') out.push({ t: THEMES[lesson.key].title + ' Song', ko: '오늘 배운 노래', e: '🎵', q: THEMES[lesson.key].song });
-    else if (lesson.type === 'story' || lesson.type === 'relisten') out.push({ t: 'Daily Routine Songs', ko: '생활 영어 노래', e: '🎵', q: 'Super Simple Songs daily routine songs for kids' });
-    else if (lesson.type === 'sentence') out.push({ t: SENTENCES[lesson.key].title, ko: '오늘 배운 노래', e: '🎵', q: SENTENCES[lesson.key].song });
-    else out.push(VIDEOS.songs[0]);
-  }
-  out.push(...shuffle(VIDEOS.stories).slice(0, 6 - out.length));
-  return out.slice(0, 6);
+  const today = [...new Set(lessonVideos(lesson))];
+  const learned = shuffle([...new Set(CURRICULUM.slice(0, S.dayIndex).flatMap(lessonVideos))].filter(i => !today.includes(i)));
+  return [...today.map(vid), ...shuffle(favVideos()).slice(0, 2), ...learned.map(vid)].slice(0, 6);
 }
-// 유튜브 검색은 진짜 링크(<a>)로 — 팝업 차단·임베드 제한 환경에서도 새 탭으로 열림
 function videoCard(v, i) {
-  const inner = `<span class="emoji">${esc(v.e)}</span><span><div class="t">${esc(v.t)}</div><div class="k">${esc(v.ko)}${v.fav ? ' · 앱에서 재생' : ''}</div></span>`;
-  return v.yt ? `<button class="video-card fav" data-a="v" data-i="${i}">${inner}</button>`
-    : `<a class="video-card" href="${esc(yt(v.q))}" target="_blank" rel="noopener" data-a="v" data-i="${i}">${inner}</a>`;
+  const badge = v.fav ? '<b class="vbadge">부모님 추천</b>' : v.kind === 'peppa' ? '<b class="vbadge peppa">페파피그</b>' : '';
+  return `<button class="video-card" data-a="v" data-i="${i}"><span class="thumb"><img src="https://i.ytimg.com/vi/${encodeURIComponent(v.yt)}/mqdefault.jpg" alt="" loading="lazy">
+    <i>${ui('play', '#fff', 30)}</i>${badge}</span><span class="vt"><span class="t">${esc(v.t)}</span><span class="k">${esc(v.ko)}</span></span></button>`;
 }
-function openYT(url, act, el) { if (act) markAct(act); if (!el || el.tagName !== 'A') window.open(url, '_blank', 'noopener'); }
 function ytId(u) { const m = String(u).match(/(?:youtu\.be\/|[?&]v=|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/); return m ? m[1] : null; }
-function playFav(v) {
-  markAct(v.cat === 'song' ? 'song' : 'story'); stopSpeech();
+// 앱 안 플레이어: 끝나면 자동으로 닫히고 제니에게 돌아옴
+let ytApi = null;
+function loadYTApi() {
+  if (ytApi) return ytApi;
+  ytApi = new Promise(res => {
+    if (window.YT && window.YT.Player) return res();
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prev) prev(); res(); };
+    const sc = document.createElement('script'); sc.src = 'https://www.youtube.com/iframe_api'; sc.onerror = () => res();
+    document.head.appendChild(sc); setTimeout(res, 5000);
+  });
+  return ytApi;
+}
+async function playVideo(v) {
+  markAct(v.kind === 'peppa' ? 'story' : 'song'); stopSpeech();
   const p = document.createElement('div');
   p.className = 'player';
-  p.innerHTML = `<div class="topbar"><button class="icon-btn" aria-label="닫기">✖️</button><div class="pill" style="flex:1">${esc(v.t)}</div></div>
-    <iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.yt)}?rel=0&playsinline=1&modestbranding=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
-  p.querySelector('button').onclick = () => p.remove();
+  p.innerHTML = `<div class="topbar"><button class="icon-btn" aria-label="닫기">${ui('arrowL', '#6B5E85', 34)}</button><div class="pill ptitle">${esc(v.t)}</div></div><div class="frame"><div id="ytp"></div></div>`;
+  const close = (ended) => { if (!p.isConnected) return; p.remove(); if (ended) { sfx.ok(); say(rand(['Did you like it?', 'That was fun!', 'Yay! Great song!'])); } };
+  p.querySelector('button').onclick = () => close(false);
   document.body.appendChild(p);
+  await loadYTApi();
+  if (!p.isConnected) return;
+  if (window.YT && window.YT.Player) {
+    new window.YT.Player('ytp', { videoId: v.yt, host: 'https://www.youtube-nocookie.com',
+      playerVars: { rel: 0, playsinline: 1, modestbranding: 1, autoplay: 1 },
+      events: { onStateChange: (e) => { if (e.data === 0) setTimeout(() => close(true), 500); } } });
+  } else {
+    p.querySelector('#ytp').outerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.yt)}?rel=0&playsinline=1&autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+  }
 }
+// 영상 화면: 오늘 영상 → 노래(배운 순서) → 페파피그 → 부모님 추천
 function showVideos(cat) {
-  const favs = S.favVideos.map(f => ({ t: f.title, ko: f.cat === 'song' ? '부모님 추천 노래' : '부모님 추천 영상', e: f.cat === 'song' ? '🎵' : '⭐', yt: f.yt, cat: f.cat, fav: true }))
-    .sort((a, b) => (b.cat === cat) - (a.cat === cat));
-  const cur = lessonAt(Math.max(0, (S.lastLessonIdx ?? S.dayIndex)));
-  const todays = recommend(cur).filter(v => !v.fav).slice(0, 1);
-  const list = [...favs, ...(cat === 'songs' ? todays : []), ...VIDEOS[cat], ...VIDEOS[cat === 'songs' ? 'stories' : 'songs']];
-  const t = cat === 'songs' ? ['Sing along!', '노래하며 영어를 배워요'] : ["It's story time!", '재미있는 영어 동화와 애니메이션'];
-  render(topbar() + jennySays(t[0], t[1], 120) + `<div class="video-grid">${list.map((v, i) => videoCard(v, i)).join('')}</div>
-    <p class="hint" style="text-align:center">⭐ 노란 카드는 부모님이 등록한 영상으로 앱 안에서 바로 재생돼요. 나머지는 유튜브 검색으로 열려요.</p>`, {
-    ...baseHandlers(),
-    v: (b) => { const v = list[+b.dataset.i]; v.yt ? playFav(v) : openYT(yt(v.q), cat === 'songs' ? 'song' : 'story', b); },
-  });
+  const cur = lessonAt(S.lastLessonIdx ?? S.dayIndex);
+  const todays = [...new Set(lessonVideos(cur))];
+  const order = [...new Set(CURRICULUM.flatMap(lessonVideos))];
+  const learnedSet = new Set(CURRICULUM.slice(0, S.dayIndex + 1).flatMap(lessonVideos));
+  const songs = order.filter(i => VIDEO_LIB[i] && VIDEO_LIB[i][2] === 'song' && !todays.includes(i)).sort((a, b) => learnedSet.has(b) - learnedSet.has(a));
+  const peppa = Object.keys(VIDEO_LIB).filter(i => VIDEO_LIB[i][2] === 'peppa');
+  const sections = [['⭐', '오늘의 영상', todays.map(vid)], ['🎵', '노래', songs.map(vid)], ['🐷', '페파피그', peppa.map(vid)], ['💝', '부모님 추천', favVideos()]];
+  if (cat === 'stories') [sections[1], sections[2]] = [sections[2], sections[1]];
+  const list = []; let html = '';
+  for (const [ic, name, vs] of sections) {
+    if (!vs.length) continue;
+    html += `<h2 class="section-title">${ic} ${name}</h2><div class="video-grid">${vs.map(v => { list.push(v); return videoCard(v, list.length - 1); }).join('')}</div>`;
+  }
+  const t = cat === 'songs' ? ['Sing along!', '그림을 누르면 바로 나와요'] : ["It's video time!", '그림을 누르면 바로 나와요'];
+  render(topbar() + jennySays(t[0], t[1], 120) + html, { ...baseHandlers(), v: (b) => playVideo(list[+b.dataset.i]) });
   say(t[0]);
 }
 
@@ -1304,6 +1328,13 @@ function showParent() {
       </div>
     </div>
 
+    <div class="panel"><h3>📺 영상 가이드</h3>
+      <p class="desc">앱의 영상은 모두 <b>공식 채널</b>(Super Simple Songs, Super Simple ABCs, Peppa Pig Official, Pinkfong) 영상만 골라 <b>수업 주제에 맞춰</b> 연결했어요. 앱 안에서 재생되고, 끝나면 제니에게 돌아와요. (광고 노출 여부는 유튜브가 정해요.)</p>
+      <div class="parent-grid">${['peppa', 'bluey'].map(k => { const g = WATCH_GUIDE[k]; return `<div><b>${k === 'peppa' ? '🐷 페파피그' : '🐶 블루이'}</b> — <span class="desc" style="margin:0">${g.when}</span><p class="desc" style="margin:6px 0">${g.why}</p>
+        <div>${g.titles.map(t => `<span class="chip" style="display:inline-flex;margin:3px;font-size:14px;box-shadow:none;background:#F1EEFC;padding:6px 10px">${esc(t)}</span>`).join('')}</div></div>`; }).join('')}</div>
+      <p class="desc" style="margin-top:14px"><b>보는 법</b>: 꼭 영어 원판으로 · 같은 편을 여러 번 · 하루 1~2편 · 처음엔 옆에서 같이 보며 "Look! Muddy puddles!"처럼 한마디씩.<br>
+      <b>유튜브 키즈를 쓸 때</b>: 부모 설정(자물쇠) → 아이 프로필 → 콘텐츠 설정을 <b>"승인된 콘텐츠만"</b>으로 바꾸고 위 채널만 허용하면 다른 영상으로 빠지지 않아요. 좋은 에피소드를 찾으면 아래 '즐겨찾기 영상'에 링크를 넣어 주세요.</p></div>
+
     <div class="panel"><h3>💾 데이터</h3>
       <p class="desc">학습 기록은 이 아이패드에만 저장돼요. 가끔 백업해 두면 안전해요.</p>
       <div class="row"><button class="btn" data-a="export">백업 파일 저장</button><label class="btn ghost">백업 불러오기<input id="imp" type="file" accept="application/json,.json" hidden></label>
@@ -1331,7 +1362,7 @@ function showParent() {
       if (!id) return toast('유튜브 링크를 확인해 주세요');
       S.favVideos.push({ title: $('#vt').value.trim() || '추천 영상', yt: id, cat: $('#vcat').value }); save(); showParent();
     },
-    playV: (b) => { const v = S.favVideos[+b.dataset.i]; playFav({ t: v.title, yt: v.yt, cat: v.cat }); },
+    playV: (b) => { const v = S.favVideos[+b.dataset.i]; playVideo({ t: v.title, yt: v.yt, kind: v.cat === 'song' ? 'song' : 'peppa' }); },
     delV: (b) => { S.favVideos.splice(+b.dataset.i, 1); save(); showParent(); },
     export: () => {
       const blob = new Blob([JSON.stringify(S)], { type: 'application/json' });
