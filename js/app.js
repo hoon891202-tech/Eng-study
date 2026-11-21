@@ -15,7 +15,7 @@ function defaultState() {
   for (const [k, v] of Object.entries(ACTIVITIES)) schedule[k] = [...v.days];
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
-    history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {},
+    history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {}, settingsAt: 0, listsAt: 0, sync: null,
     settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, schedule },
   };
 }
@@ -34,10 +34,12 @@ function load() {
   return base;
 }
 let S = load();
-function save() {
+function saveLocalOnly() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); }
   catch (e) { console.warn(e); toast('저장 공간이 부족해요. 사진 단어를 일부 지워주세요.'); }
 }
+// 저장 + (가족 코드가 있으면) 잠시 뒤 다른 기기와 동기화
+function save() { saveLocalOnly(); if (typeof schedulePush === 'function') schedulePush(); }
 
 /* ---------------- 유틸 ---------------- */
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -162,10 +164,10 @@ function jennySays(en, ko, size = 150) {
 }
 
 /* ---------------- 화면 전환 ---------------- */
-let navTok = 0;
+let navTok = 0, onHome = false;
 let handlers = {};
 function render(html, h = {}) {
-  navTok++; stopSpeech();
+  navTok++; stopSpeech(); onHome = false;
   document.body.classList.remove('parent-mode');
   app.innerHTML = `<div class="screen">${html}</div>`;
   app.scrollTop = 0;
@@ -389,6 +391,7 @@ function showHome() {
     stickers: showStickers,
     act: (b) => openActivity(b.dataset.k),
   });
+  onHome = true;
 }
 function openActivity(k) {
   ({ listen: showListening, talk: showTalkMenu, book: showLibrary, abc: showABC, trace: () => showTraceMenu(), game: showGames, mywords: startMyWords, review: startReview, song: () => showVideos('songs'), story: () => showVideos('stories') })[k]();
@@ -410,7 +413,7 @@ function showOnboarding() {
     start: () => {
       const n = $('#nm').value.trim();
       if (!n) { $('#nm').focus(); return; }
-      S.childName = n; S.childNameEn = $('#nmEn').value.trim(); save();
+      S.childName = n; S.childNameEn = $('#nmEn').value.trim(); S.settingsAt = Date.now(); save();
       showHome();
       say(`Hi, ${childNameEn()}! I am Jenny, the white rabbit. Let's learn English together!`);
     },
@@ -1288,6 +1291,15 @@ function showParent() {
       <p class="desc" style="margin-top:14px">오늘 학습 ${Math.round(t.sec / 60)}분 · 최근 7일 ${Math.round(minsWeek / 60)}분 · 현재 진도 <b>Day ${S.dayIndex}</b> ${esc(cl.ko)} (${esc(cl.en)})</p>
       <div class="cal">${cal}</div></div>
 
+    <div class="panel"><h3>☁️ 기기 간 기록 공유</h3>
+      <p class="desc">아이패드와 폴드8에 같은 <b>가족 코드</b>를 넣으면 진도·별·스티커가 함께 저장돼요. 두 기기에서 따로 공부해도 합쳐져요.</p>
+      ${S.sync && S.sync.code ? `<div class="row"><span class="famcode">${esc(S.sync.code)}</span><button class="btn ghost" data-a="syncCopy">코드 복사</button></div>
+        <p class="desc" style="margin:4px 0 10px">${S.sync.err ? '⚠️ ' + esc(S.sync.err) : S.sync.lastAt ? '✅ 마지막 동기화: ' + new Date(S.sync.lastAt).toLocaleString('ko-KR') : '아직 동기화 전'}</p>
+        <div class="row"><button class="btn" data-a="syncGo">지금 동기화</button><button class="btn ghost" data-a="syncOff">이 기기 연결 끊기</button></div>`
+      : `<div class="row"><button class="btn" data-a="syncNew">새 가족 코드 만들기</button><span class="desc" style="margin:0">처음 한 기기에서만 눌러요</span></div>
+        <div class="row"><input id="famIn" type="text" placeholder="다른 기기의 가족 코드 (예: ABCD-EFGH-JK)" style="flex:1;text-transform:uppercase" autocomplete="off"><button class="btn" data-a="syncJoin">연결하기</button></div>`}
+      <p class="desc" id="syncMsg" style="margin:8px 0 0"></p></div>
+
     <div class="parent-grid">
       <div class="panel"><h3>📚 진도 관리</h3>
         <p class="desc">모국어처럼 배워요: <b>듣기 나라</b>(일상 이야기·단어, 6주) → <b>말하기 마을</b>(제니와 대화) → <b>읽기 나라</b>(알파벳·파닉스) → 맞춤 복습이 계속 이어져요.</p>
@@ -1345,7 +1357,7 @@ function showParent() {
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
     saveSet: () => {
       Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, oneLessonPerDay: $('#oneDay').checked });
-      S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); save(); toast('저장했어요');
+      S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); S.settingsAt = Date.now(); save(); toast('저장했어요');
     },
     addW: async () => {
       const w = $('#cw').value.trim(), ko = $('#ck').value.trim(), e = $('#ce').value.trim();
@@ -1353,26 +1365,31 @@ function showParent() {
       const f = $('#cp').files[0];
       let img = null;
       if (f) { try { img = await readImage(f); } catch (err) { return toast('사진을 불러오지 못했어요'); } }
-      S.customWords.push({ w, ko, e: e || '💝', img }); save(); say(w); showParent();
+      S.customWords.push({ w, ko, e: e || '💝', img }); S.listsAt = Date.now(); save(); say(w); showParent();
     },
     sayW: (b) => say(S.customWords[+b.dataset.i].w),
-    delW: (b) => { S.customWords.splice(+b.dataset.i, 1); save(); showParent(); },
+    delW: (b) => { S.customWords.splice(+b.dataset.i, 1); S.listsAt = Date.now(); save(); showParent(); },
     addV: () => {
       const id = ytId($('#vu').value);
       if (!id) return toast('유튜브 링크를 확인해 주세요');
-      S.favVideos.push({ title: $('#vt').value.trim() || '추천 영상', yt: id, cat: $('#vcat').value }); save(); showParent();
+      S.favVideos.push({ title: $('#vt').value.trim() || '추천 영상', yt: id, cat: $('#vcat').value }); S.listsAt = Date.now(); save(); showParent();
     },
     playV: (b) => { const v = S.favVideos[+b.dataset.i]; playVideo({ t: v.title, yt: v.yt, kind: v.cat === 'song' ? 'song' : 'peppa' }); },
-    delV: (b) => { S.favVideos.splice(+b.dataset.i, 1); save(); showParent(); },
+    delV: (b) => { S.favVideos.splice(+b.dataset.i, 1); S.listsAt = Date.now(); save(); showParent(); },
     export: () => {
       const blob = new Blob([JSON.stringify(S)], { type: 'application/json' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `jenny-english-backup-${todayKey()}.json`;
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     },
+    syncNew: async () => { $('#syncMsg').textContent = '만드는 중…'; const r = await createFamily(); if (r.ok) { toast('가족 코드를 만들었어요'); showParent(); } else $('#syncMsg').textContent = '⚠️ ' + r.err; },
+    syncJoin: async () => { $('#syncMsg').textContent = '연결하는 중…'; const r = await joinFamily($('#famIn').value); if (r.ok) { toast('연결했어요! 두 기기 기록을 합쳤어요'); showParent(); } else $('#syncMsg').textContent = '⚠️ ' + r.err; },
+    syncGo: async () => { $('#syncMsg').textContent = '동기화 중…'; const r = await syncNow(); showParent(); toast(r.ok ? '동기화했어요' : r.err); },
+    syncOff: () => { leaveFamily(); toast('이 기기는 연결을 끊었어요 (기록은 그대로)'); showParent(); },
+    syncCopy: () => { const c = S.sync.code; try { navigator.clipboard.writeText(c).then(() => toast('복사했어요: ' + c), () => toast(c)); } catch (e) { toast(c); } },
     reset: () => { if (confirm('모든 학습 기록을 지울까요? 되돌릴 수 없어요.')) { S = defaultState(); save(); showHome(); } },
   });
   document.body.classList.add('parent-mode');
-  app.querySelectorAll('[data-sch]').forEach(c => c.addEventListener('change', () => { S.settings.schedule[c.dataset.sch][+c.dataset.d] = c.checked ? 1 : 0; save(); }));
+  app.querySelectorAll('[data-sch]').forEach(c => c.addEventListener('change', () => { S.settings.schedule[c.dataset.sch][+c.dataset.d] = c.checked ? 1 : 0; S.settingsAt = Date.now(); save(); }));
   $('#cp').addEventListener('change', (e) => { $('#cpn').textContent = e.target.files[0] ? '사진 선택됨 ✓' : ''; });
   $('#imp').addEventListener('change', async (e) => {
     const f = e.target.files[0]; if (!f) return;
@@ -1402,4 +1419,6 @@ function toast(msg) {
 
 /* ---------------- 시작 ---------------- */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+function onSyncChanged() { if (onHome) showHome(); }
 showHome();
+if (S.sync && S.sync.code) syncNow().then(r => { if (r.changed) onSyncChanged(); });

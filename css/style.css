@@ -564,3 +564,5 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
 }
 @media (max-width: 560px) { .video-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
 .video-grid > * { min-width: 0; }
+
+.famcode { font-family: var(--en); font-size: 30px; font-weight: 600; letter-spacing: 3px; background: #F1EEFC; color: #5B4BDB; padding: 8px 18px; border-radius: 14px; user-select: all; -webkit-user-select: all; }
