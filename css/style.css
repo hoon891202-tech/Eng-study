@@ -1,11 +1,14 @@
 :root {
-  --pink: #ff7eb0;
-  --pink-soft: #ffe4ef;
-  --carrot: #ff9a3c;
-  --mint: #3fcfa6;
-  --sky: #5bb8ff;
-  --purple: #a07cf5;
-  --yellow: #ffd23f;
+  --pink: #FF6B8A;
+  --pink-d: #E04A6C;
+  --pink-soft: #FFE3EA;
+  --carrot: #FF9A3C;
+  --mint: #3FC495;
+  --sky: #4DA8FF;
+  --sky-d: #2E86E0;
+  --purple: #A07CF5;
+  --yellow: #FFC23D;
+  --wood: #C98B4E;
   --ink: #4b3a5e;
   --ink-soft: #8a7a9c;
   --card: #ffffff;
@@ -19,7 +22,7 @@
 html, body {
   margin: 0; height: 100%; overflow: hidden;
   font-family: var(--ko); color: var(--ink);
-  background: linear-gradient(180deg, #dff3ff 0%, #fff4fa 60%, #fff8e6 100%);
+  background: linear-gradient(180deg, #A9DCFF 0%, #D9F0FF 45%, #EFF9FF 62%, #8FD67F 62.1%);
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   touch-action: manipulation;
 }
@@ -333,3 +336,84 @@ input, select { font: inherit; -webkit-user-select: text; user-select: text; }
 /* ---------- 따라 말하기 녹음 ---------- */
 .round-btn.recording { animation: pulse 1s ease-in-out infinite; }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 139, .6); } 50% { box-shadow: 0 0 0 22px rgba(255, 107, 139, 0); } }
+
+/* =========================================================
+   제니의 마을 테마 (시안 B, 나현이 선택)
+   ========================================================= */
+#scene { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+#scene svg { width: 100%; height: 100%; display: block; }
+#scene .cloud { animation: drift 30s linear infinite alternate; }
+#scene .cloud.slow { animation-duration: 45s; }
+@keyframes drift { to { transform: translateX(60px); } }
+#app { z-index: 1; }
+.pill { background: rgba(255, 255, 255, .94); }
+.progress-dots span svg { display: block; }
+.icon-btn svg, .round-btn svg { display: block; }
+.round-btn.primary { background: var(--pink); box-shadow: 0 6px 0 var(--pink-d); }
+.round-btn.speak { background: var(--sky); box-shadow: 0 6px 0 var(--sky-d); }
+.round-btn.mic { background: #FF6B8A; box-shadow: 0 6px 0 var(--pink-d); }
+.round-btn.recording { background: #FF3B5C; }
+.big-btn { background: var(--pink); box-shadow: 0 8px 0 var(--pink-d), 0 16px 30px rgba(255, 107, 138, .3); }
+.btn { background: var(--pink); }
+.choice.right, .mcard.matched .front { background: #DDF7EC; }
+.bar > i { background: var(--sky); }
+
+/* 홈: 마을 */
+.pill.lv b { font-family: var(--en); color: #7B5CE0; }
+.pill.lv .bar { width: 120px; height: 12px; margin: 0; background: #EEE7FA; }
+.pill.lv .bar > i { background: #9C80F5; }
+.week-stones { align-self: center; display: flex; gap: 8px; background: rgba(255, 255, 255, .88); border-radius: 22px; padding: 8px 14px; font-size: 17px; color: var(--ink-soft); }
+.week-stones span { width: 46px; text-align: center; border-radius: 12px; padding: 2px 0; }
+.week-stones span.now { color: var(--ink); background: var(--pink-soft); }
+.week-stones .stone { width: 34px; height: 34px; border-radius: 50%; background: #ECE5F2; margin: 0 auto 2px; display: grid; place-items: center; }
+.week-stones .sprout { width: 12px; height: 12px; border-radius: 50%; background: var(--mint); display: block; }
+.village-mid { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding: 0 10px; }
+.signpost { position: relative; width: min(560px, 100%); padding-bottom: 60px; text-align: left; margin-left: auto; }
+.signpost .board { position: relative; z-index: 1; background: #FFF6E5; border: 6px solid var(--wood); border-radius: 30px; padding: 24px 24px 20px; display: flex; gap: 18px; align-items: center; box-shadow: 0 8px 0 #A86C35; }
+.signpost .post { position: absolute; bottom: 0; width: 22px; height: 120px; background: var(--wood); border-radius: 6px; }
+.signpost .post.l { left: 80px; } .signpost .post.r { right: 80px; }
+.signpost .ribbon { position: absolute; top: -22px; left: 24px; background: var(--pink); color: #fff; padding: 6px 18px; border-radius: 12px; font-size: 20px; box-shadow: 0 4px 0 var(--pink-d); }
+.signpost .sign-ic { font-size: 76px; line-height: 1; }
+.signpost .t1 { font-family: var(--en); font-size: 19px; color: #B0743B; }
+.signpost .t2 { font-size: 38px; line-height: 1.15; }
+.signpost .play { margin-left: auto; width: 88px; height: 88px; border-radius: 50%; background: var(--pink); display: grid; place-items: center; box-shadow: 0 6px 0 var(--pink-d); flex: none; }
+.signpost.done .ribbon, .signpost.done .play { background: var(--mint); box-shadow: 0 4px 0 #26A275; }
+.signpost:active .board { transform: translateY(4px); box-shadow: 0 4px 0 #A86C35; }
+.village { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; align-items: end; padding-top: 34px; }
+.house { display: flex; flex-direction: column; align-items: center; position: relative; }
+.house:nth-child(even) { margin-bottom: 26px; }
+.house .roof { width: 0; height: 0; border-left: 62px solid transparent; border-right: 62px solid transparent; border-bottom: 52px solid; margin-bottom: -6px; }
+.house .hbody { width: 108px; height: 104px; border-radius: 10px 10px 18px 18px; display: grid; place-items: center; box-shadow: inset 0 -10px 0 rgba(0, 0, 0, .07); }
+.house .win { width: 82px; height: 82px; border-radius: 50%; background: #fff; display: grid; place-items: center; box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .05); }
+.house .label { margin-top: 8px; background: #fff; border-radius: 14px; padding: 5px 12px; font-size: 19px; box-shadow: 0 3px 0 rgba(58, 46, 79, .1); white-space: nowrap; }
+.house .flag { position: absolute; top: -30px; left: 50%; display: flex; align-items: flex-start; }
+.house .flag i { width: 4px; height: 36px; background: #7D5A3A; display: block; }
+.house .flag b { background: var(--yellow); color: var(--ink); font-size: 14px; font-weight: 400; padding: 3px 8px; border-radius: 0 8px 8px 0; }
+.house .flag.ok b { background: var(--mint); padding: 2px 6px; }
+.house:active { transform: scale(.94); }
+.house:active .win { transform: scale(1.1); }
+
+/* 부모님 메뉴: 차분한 모던 (마을 배경 숨김) */
+body.parent-mode { background: #F5F3FF; }
+body.parent-mode #scene { display: none; }
+body.parent-mode .panel { border-radius: 28px; box-shadow: 0 1px 2px rgba(36, 28, 74, .06), 0 8px 24px rgba(36, 28, 74, .06); }
+body.parent-mode .btn { background: #5B4BDB; }
+body.parent-mode .btn.ghost { background: #ECE9FB; color: #241C4A; }
+body.parent-mode .btn.danger { background: #FF6B6B; }
+body.parent-mode .stats b { color: #5B4BDB; }
+body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
+
+@media (orientation: portrait) {
+  .village { grid-template-columns: repeat(5, 1fr); row-gap: 40px; }
+  .signpost { margin: 0 auto; }
+  .village-mid { justify-content: center; }
+}
+@media (max-width: 760px) {
+  .house .roof { border-left-width: 44px; border-right-width: 44px; border-bottom-width: 38px; }
+  .house .hbody { width: 76px; height: 74px; }
+  .house .win { width: 58px; height: 58px; }
+  .house .win svg { width: 38px; height: 38px; }
+  .house .label { font-size: 15px; }
+  .signpost .t2 { font-size: 26px; }
+  .week-stones span { width: 32px; }
+}

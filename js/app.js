@@ -166,6 +166,7 @@ let navTok = 0;
 let handlers = {};
 function render(html, h = {}) {
   navTok++; stopSpeech();
+  document.body.classList.remove('parent-mode');
   app.innerHTML = `<div class="screen">${html}</div>`;
   app.scrollTop = 0;
   handlers = h;
@@ -177,9 +178,11 @@ app.addEventListener('click', (e) => {
   if (fn) fn(b, e);
 });
 function topbar(ctx) {
-  const dots = ctx && ctx.total ? `<div class="progress-dots">${Array.from({ length: ctx.total }, (_, i) => `<span class="${i < ctx.idx ? 'on' : ''}">🥕</span>`).join('')}</div>` : '<div class="spacer"></div>';
-  return `<div class="topbar"><button class="icon-btn" data-a="home" aria-label="홈">🏠</button>${dots}<div class="pill">⭐ <b class="en" id="starCount">${S.stars}</b></div></div>`;
+  const dots = ctx && ctx.total ? `<div class="progress-dots">${Array.from({ length: ctx.total }, (_, i) => `<span class="${i < ctx.idx ? 'on' : ''}">${CARROT}</span>`).join('')}</div>` : '<div class="spacer"></div>';
+  return `<div class="topbar"><button class="icon-btn" data-a="home" aria-label="홈">${icon('home', 38, '#FF6B8A', '#E04A6C')}</button>${dots}${starPill()}</div>`;
 }
+const CARROT = icon('carrot', 30, '#FF9A3C', '#4CC38A', '#FFD3A8');
+const starPill = () => `<div class="pill">${icon('sticker', 28, '#FFC23D', '#E9A10F', '#fff')} <b class="en" id="starCount">${S.stars}</b></div>`;
 const baseHandlers = () => ({ home: () => showHome(), jenny: () => { sfx.tap(); say('Hi! I am Jenny!'); } });
 
 /* ---------------- 별 / 레벨 ---------------- */
@@ -346,33 +349,39 @@ function showHome() {
   const l = lessonAt(idx), lab = lessonLabel(l);
   const stage = STAGES[Math.min(l.stage, 4)];
   const dow = new Date().getDay();
-  const tiles = ['listen', 'book', 'talk', 'game', 'mywords', 'review', 'song', 'story', 'abc'].map(k => {
-    const a = ACTIVITIES[k];
-    const sched = S.settings.schedule[k]?.[dow];
-    const badge = t.acts[k] ? '<span class="badge ok">✓</span>' : sched ? '<span class="badge">오늘!</span>' : '';
-    return `<button class="tile" data-a="act" data-k="${k}">${badge}<span class="emoji">${a.icon}</span>${a.ko}<span class="en">${a.en}</span></button>`;
-  }).join('') + `<button class="tile" data-a="stickers"><span class="emoji">📒</span>스티커북<span class="en">${S.stickers.length} / ${STICKERS.length}</span></button>`;
-
+  // 활동마다 마을의 집 한 채
+  const houses = ['listen', 'book', 'talk', 'game', 'mywords', 'review', 'song', 'story', 'abc', 'stickers'].map(k => {
+    const [ic, wall, roof] = HOUSE[k];
+    const isSt = k === 'stickers';
+    const label = isSt ? '스티커북' : ACTIVITIES[k].ko;
+    const flag = !isSt && t.acts[k] ? `<div class="flag ok"><i></i><b>${ui('check', '#fff', 18)}</b></div>`
+      : !isSt && S.settings.schedule[k]?.[dow] ? '<div class="flag"><i></i><b>오늘!</b></div>' : '';
+    return `<button class="house" data-a="${isSt ? 'stickers' : 'act'}" data-k="${k}">${flag}<div class="roof" style="border-bottom-color:${roof}"></div>
+      <div class="hbody" style="background:${wall}"><div class="win">${icon(ic, 54, wall, roof, '#fff')}</div></div><div class="label">${label}</div></button>`;
+  }).join('');
   const sun = new Date(); sun.setDate(sun.getDate() - dow);
   const week = DAYS_KO.map((d, i) => {
     const day = new Date(sun); day.setDate(sun.getDate() + i);
     const h = S.history[dkey(day)];
-    return `<div class="d ${i === dow ? 'today' : ''}"><b>${h && h.lesson ? '🥕' : (h && Object.keys(h.acts || {}).length ? '🌱' : '·')}</b>${d}</div>`;
+    const mark = h && h.lesson ? icon('carrot', 26, '#FF9A3C', '#4CC38A', '#FFD3A8') : (h && Object.keys(h.acts || {}).length ? '<i class="sprout"></i>' : '');
+    return `<span class="${i === dow ? 'now' : ''}"><div class="stone">${mark}</div>${d}</span>`;
   }).join('');
-  const hello = doneToday ? [`You did it today, ${childNameEn()}!`, `${childName()}, 오늘 수업 완료! 최고야!`] : [`Hi, ${childNameEn()}! Let's play!`, `안녕 ${childName()}! 오늘도 같이 놀자!`];
+  const hello = doneToday ? [`You did it today, ${childNameEn()}!`, `${childName()}, 오늘 수업 완료! 최고야!`] : [`Hi, ${childNameEn()}!`, `안녕 ${childName()}! 오늘은 어디 갈까?`];
+  const ribbon = doneToday ? '오늘 완료!' : l.type === 'story' || l.type === 'relisten' ? '오늘의 이야기' : '오늘의 수업';
 
   render(`
-    <div class="topbar"><div class="pill">🔥 ${streak()}일 연속</div><div class="spacer"></div>
-      <div class="pill">⭐ <b class="en" id="starCount">${S.stars}</b></div>
-      <button class="icon-btn" data-a="parent" aria-label="부모님 메뉴">⚙️</button></div>
-    <div class="home-hero">${jennySays(hello[0], hello[1], 170)}
-      <div class="level-card"><div class="lv">Level ${lv.lv}</div><div class="bar"><i style="width:${lv.cur / lv.need * 100}%"></i></div>
-      <div class="sub">다음 레벨까지 ⭐ ${lv.need - lv.cur}개</div></div></div>
-    <button class="big-btn ${doneToday ? 'done' : ''}" data-a="lesson"><span class="emoji">${lab.icon}</span>
-      <span><div class="t1">Day ${idx} · ${esc(stage.title)}</div><div class="t2">${doneToday ? '오늘 수업 완료! 다시 볼까요?' : esc(lab.ko)}</div><div class="t1">${esc(lab.en)}</div></span>
-      <span class="go">${doneToday ? '🔁' : '▶️'}</span></button>
-    <div class="tiles">${tiles}</div>
-    <div class="week">${week}</div>`, {
+    <div class="topbar"><div class="pill lv"><b class="en">Level ${lv.lv}</b><div class="bar"><i style="width:${lv.cur / lv.need * 100}%"></i></div></div>
+      <div class="pill">${icon('sun', 26, '#FFC23D', '#FF9F1C', '#FFF2CF')} ${streak()}일 연속</div><div class="spacer"></div>
+      ${starPill()}<button class="icon-btn" data-a="parent" aria-label="부모님 메뉴">${icon('gear', 30, '#B9AECB')}</button></div>
+    <div class="week-stones">${week}</div>
+    <div class="village-mid">
+      ${jennySays(hello[0], hello[1], 210)}
+      <button class="signpost ${doneToday ? 'done' : ''}" data-a="lesson"><i class="post l"></i><i class="post r"></i>
+        <div class="board"><span class="ribbon">${ribbon}</span><span class="sign-ic">${lab.icon}</span>
+          <div><div class="t1">Day ${idx} · ${esc(stage.title)}</div><div class="t2">${doneToday ? '한 번 더 볼까?' : esc(lab.ko.replace('이야기 듣기 · ', ''))}</div><div class="t1">${esc(lab.en)}</div></div>
+          <span class="play">${ui(doneToday ? 'replay' : 'play', '#fff', 42)}</span></div></button>
+    </div>
+    <div class="village">${houses}</div>`, {
     ...baseHandlers(),
     jenny: () => { sfx.tap(); talk(hello[0], [hello[1], { lang: 'ko-KR', rate: 1 }]); },
     parent: () => parentGate(showParent),
@@ -496,7 +505,7 @@ function stepIntro(l, ctx) {
     body = jennySays(en, ko) + `<div class="center"><div style="font-size:min(26vh,220px)">${t.icon}</div><h1 class="title"><span class="en">${esc(t.title)}</span>${esc(t.ko)}</h1></div>`;
     lines = isHello ? [en, 300, `Welcome to English Land, ${childNameEn()}!`, 300, "Let's say hello!"] : [en.replace(':', '.')];
   }
-  render(topbar(ctx) + body + `<div class="nav-row"><button class="round-btn speak" data-a="replay">🔊</button><button class="round-btn primary" data-a="next">➡️</button></div>`,
+  render(topbar(ctx) + body + `<div class="nav-row"><button class="round-btn speak" data-a="replay">${ui('speaker')}</button><button class="round-btn primary" data-a="next">${ui('arrowR')}</button></div>`,
     { ...h, replay: () => talk(...lines) });
   talk(...lines);
 }
@@ -517,9 +526,9 @@ function stepWords(words, ctx, opt = {}) {
         <div class="hint">${i + 1} / ${words.length} · 카드를 누르면 다시 들려줘요</div>
       </div>
       <div class="nav-row">
-        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>⬅️</button>
-        <button class="round-btn speak" data-a="say">🔊</button>
-        <button class="round-btn primary" data-a="next">➡️</button>
+        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>${ui('arrowL', '#6B5E85')}</button>
+        <button class="round-btn speak" data-a="say">${ui('speaker')}</button>
+        <button class="round-btn primary" data-a="next">${ui('arrowR')}</button>
       </div>`, {
       ...baseHandlers(),
       say: () => { sfx.tap(); talk(line(x)); },
@@ -543,7 +552,7 @@ function stepTrace(L, ctx, onDone) {
       <div class="trace-tools">${colors.map(c => `<button class="color-dot ${c === color ? 'on' : ''}" data-a="color" data-c="${c}" style="background:${c}"></button>`).join('')}
         <button class="round-btn" data-a="case" style="width:64px;height:64px;font-size:26px"><span class="en">Aa</span></button>
         <button class="round-btn" data-a="clear" style="width:64px;height:64px;font-size:30px">🧽</button>
-        <button class="round-btn primary" data-a="next" id="traceNext" style="width:64px;height:64px;font-size:30px">➡️</button></div>
+        <button class="round-btn primary" data-a="next" id="traceNext" style="width:64px;height:64px;font-size:30px">${ui('arrowR', '#fff', 32)}</button></div>
     </div>`, {
     ...baseHandlers(),
     color: (b) => { color = b.dataset.c; document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('on', d === b)); },
@@ -630,7 +639,7 @@ function findGame({ targets, pool, rounds, ctx, sentence, onDone }) {
       ${jennySays(prompt, sentence ? target.ko : `"${target.ko}" 그림을 찾아봐요!`, 120)}
       <div class="center"><div class="choices">${choices.map((c, i) => `<button class="card choice" data-a="pick" data-i="${i}" ${picStyle(c, 'min(15vh,130px)')}>${pic(c)}</button>`).join('')}</div>
       <div class="hint">${r} / ${rounds}</div></div>
-      <div class="nav-row"><button class="round-btn speak" data-a="again">🔊</button></div>`, {
+      <div class="nav-row"><button class="round-btn speak" data-a="again">${ui('speaker')}</button></div>`, {
       ...baseHandlers(),
       again: () => talk(prompt),
       pick: async (b) => {
@@ -820,11 +829,11 @@ function letterDetail(L) {
       <div class="letter-info"><div class="chip"><span class="k">이름</span> ${a.name}</div><div class="chip"><span class="k">소리</span><span class="en">${a.ipa}</span> "${a.soundKo}"</div></div>
       <div class="word-row">${words.map((w, j) => `<button class="card mini-word" data-a="word" data-i="${j}"><div class="pic">${w.e}</div><div class="w">${highlight(w.w, a.L)}</div>${S.settings.showKorean ? `<div class="ko">${esc(w.ko)}</div>` : ''}</button>`).join('')}</div>
       <div class="nav-row">
-        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>⬅️</button>
+        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>${ui('arrowL', '#6B5E85')}</button>
         <button class="btn" data-a="trace" style="font-size:20px">✏️ 따라쓰기</button>
         <button class="btn" data-a="video" style="font-size:20px;background:var(--sky)">📺 ${a.L} 영상</button>
         <button class="btn" data-a="game" style="font-size:20px;background:var(--mint)">🎮 게임</button>
-        <button class="round-btn" data-a="nextL" ${i === 25 ? 'style="visibility:hidden"' : ''}>➡️</button>
+        <button class="round-btn" data-a="nextL" ${i === 25 ? 'style="visibility:hidden"' : ''}>${ui('arrowR', '#6B5E85')}</button>
       </div></div>`, {
     ...baseHandlers(),
     hear: () => { const e = $('#bl'); e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); intro(); },
@@ -993,11 +1002,11 @@ function readBook(book, opt = {}) {
         <div class="hint">그림과 단어를 누르면 읽어줘요</div>
       </div>
       <div class="nav-row">
-        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>⬅️</button>
-        <button class="round-btn speak" data-a="read">🔊</button>
+        <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>${ui('arrowL', '#6B5E85')}</button>
+        <button class="round-btn speak" data-a="read">${ui('speaker')}</button>
         <button class="round-btn ${slow ? 'primary' : ''}" data-a="slow" aria-label="천천히">🐢</button>
         <button class="round-btn ${auto ? 'primary' : ''}" data-a="auto" aria-label="자동 넘김">🎧</button>
-        <button class="round-btn primary" data-a="next" id="pgNext">➡️</button>
+        <button class="round-btn primary" data-a="next" id="pgNext">${ui('arrowR')}</button>
       </div>`, {
       ...baseHandlers(),
       item: (b) => { const it = items[+b.dataset.j]; b.classList.remove('boing'); void b.offsetWidth; b.classList.add('boing'); sfx.tap(); say(it[1]); },
@@ -1114,9 +1123,9 @@ function sayItStep(x, ctx, onDone, title = 'Say it with Jenny!') {
       <div class="hint" id="micHint">${canRecord() ? '🎤를 누르고 말하면 내 목소리를 들려줘요' : ''}</div>
     </div>
     <div class="nav-row">
-      <button class="round-btn speak" data-a="hear">🔊</button>
-      ${canRecord() ? '<button class="round-btn" data-a="mic" id="micBtn" style="background:#ff6b8b;color:#fff">🎤</button>' : ''}
-      <button class="round-btn primary" data-a="next">➡️</button>
+      <button class="round-btn speak" data-a="hear">${ui('speaker')}</button>
+      ${canRecord() ? `<button class="round-btn mic" data-a="mic" id="micBtn">${ui('mic')}</button>` : ''}
+      <button class="round-btn primary" data-a="next">${ui('arrowR')}</button>
     </div>`, {
     ...baseHandlers(),
     hear: () => talk([x.w, { rate: .85 }]),
@@ -1126,10 +1135,10 @@ function sayItStep(x, ctx, onDone, title = 'Say it with Jenny!') {
       const btn = $('#micBtn'), hint = $('#micHint'); const nav = navTok;
       stopSpeech();
       try {
-        btn.textContent = '🔴'; btn.classList.add('recording'); hint.textContent = '듣고 있어요… 말해보세요!';
+        btn.classList.add('recording'); hint.textContent = '듣고 있어요… 말해보세요!';
         const url = await recordClip(3200);
         if (nav !== navTok) return;
-        btn.textContent = '🎤'; btn.classList.remove('recording'); hint.textContent = '내 목소리 듣는 중 👂';
+        btn.classList.remove('recording'); hint.textContent = '내 목소리 듣는 중 👂';
         const a = new Audio(url); await a.play().catch(() => {});
         await new Promise(r => { a.onended = r; setTimeout(r, 4500); });
         if (nav !== navTok) return;
@@ -1138,7 +1147,7 @@ function sayItStep(x, ctx, onDone, title = 'Say it with Jenny!') {
         await talk(rand(['Wonderful!', 'Great talking!', 'I love your voice!', 'Wow, you said it!']));
       } catch (e) {
         hint.textContent = '마이크를 쓸 수 없어요. 그냥 소리 내어 따라 해도 좋아요!';
-        btn.textContent = '🎤'; btn.classList.remove('recording');
+        btn.classList.remove('recording');
       }
       busy = false;
     },
@@ -1246,7 +1255,7 @@ function showParent() {
   const sch = S.settings.schedule;
 
   render(`
-    <div class="topbar"><button class="icon-btn" data-a="home">🏠</button><h1 style="margin:0;font-size:32px;flex:1">부모님 메뉴</h1></div>
+    <div class="topbar"><button class="icon-btn" data-a="home">${icon('home', 34, '#5B4BDB', '#4434B8')}</button><h1 style="margin:0;font-size:32px;flex:1">부모님 메뉴</h1></div>
     <div class="panel"><h3>📊 학습 현황</h3>
       <div class="stats"><div><b>${lv.lv}</b>레벨</div><div><b>${S.stars}</b>모은 별</div><div><b>${streak()}</b>연속 학습일</div><div><b>${learnedCnt}</b>배운 단어</div><div><b>${Object.keys(S.booksRead).length}/${STORIES.length}</b>읽은 그림책</div></div>
       <p class="desc" style="margin-top:14px">오늘 학습 ${Math.round(t.sec / 60)}분 · 최근 7일 ${Math.round(minsWeek / 60)}분 · 현재 진도 <b>Day ${S.dayIndex}</b> ${esc(cl.ko)} (${esc(cl.en)})</p>
@@ -1328,6 +1337,7 @@ function showParent() {
     },
     reset: () => { if (confirm('모든 학습 기록을 지울까요? 되돌릴 수 없어요.')) { S = defaultState(); save(); showHome(); } },
   });
+  document.body.classList.add('parent-mode');
   app.querySelectorAll('[data-sch]').forEach(c => c.addEventListener('change', () => { S.settings.schedule[c.dataset.sch][+c.dataset.d] = c.checked ? 1 : 0; save(); }));
   $('#cp').addEventListener('change', (e) => { $('#cpn').textContent = e.target.files[0] ? '사진 선택됨 ✓' : ''; });
   $('#imp').addEventListener('change', async (e) => {

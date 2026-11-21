@@ -26,10 +26,15 @@
 6. **칭찬과 수집** — 별 ⭐, 레벨, 스티커로 즐거운 보상. 비교·순위 없음.
 7. **생활 영어** — 인사, 기분, 가족, 하루 일과 등 바로 쓸 수 있는 표현 우선.
 
+## 디자인 (제니의 마을 — 나현이 선택)
+- 아이 화면: 하늘·언덕 배경 위에 흰 카드, 볼록한(아래 그림자) 버튼. 색은 코랄·하늘·해바라기 중심 + 지붕색 민트·보라.
+- 새 아이콘은 이모지 대신 `js/icons.js`에 SVG로 추가. 부모님 메뉴는 `body.parent-mode`(차분한 모던).
+
 ## 기술 구조
 ```
 index.html            진입점 (data.js → app.js 순서로 로드)
-css/style.css         디자인 토큰(:root), 큰 터치 영역(최소 64px)
+css/style.css         디자인 토큰(:root), 큰 터치 영역(최소 64px), 맨 아래 '제니의 마을' 테마
+js/icons.js           자체 SVG 아이콘 icon()/ui(), 활동별 집 색 HOUSE
 js/data.js            모든 학습 콘텐츠: ALPHABET, THEMES, SENTENCES, STORIES, TALKS, VIDEOS, STICKERS, ACTIVITIES, 커리큘럼(맨 아래)
 js/app.js             화면(render + data-a 핸들러), TTS(say/talk), 게임, 부모님 메뉴
 sw.js                 오프라인 캐시 — 배포할 때 CACHE 버전 올리기

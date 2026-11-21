@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>제니의 영어나라</title>
   <meta name="description" content="흰토끼 제니와 함께하는 유아 영어 놀이 학습">
-  <meta name="theme-color" content="#ffe4ef">
+  <meta name="theme-color" content="#A9DCFF">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,9 +19,26 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+  <!-- 제니의 마을 배경 (아이 화면 공통) -->
+  <div id="scene" aria-hidden="true">
+    <svg viewBox="0 0 1366 1024" preserveAspectRatio="xMidYMax slice">
+      <circle cx="1220" cy="110" r="100" fill="#FFE07A" opacity=".25"/><circle cx="1220" cy="110" r="68" fill="#FFE07A"/>
+      <g class="cloud" fill="#fff"><ellipse cx="200" cy="150" rx="90" ry="34"/><ellipse cx="250" cy="128" rx="60" ry="40"/><ellipse cx="160" cy="132" rx="46" ry="30"/></g>
+      <g class="cloud slow" fill="#fff" opacity=".9"><ellipse cx="760" cy="90" rx="80" ry="28"/><ellipse cx="800" cy="72" rx="50" ry="32"/></g>
+      <path d="M0 640 C220 560 420 600 620 640 C860 690 1080 560 1366 600 V1024 H0Z" fill="#B7E6A0"/>
+      <path d="M0 720 C260 660 520 700 760 730 C1000 760 1200 690 1366 700 V1024 H0Z" fill="#8FD67F"/>
+      <path d="M0 820 C300 790 600 810 900 830 C1100 840 1250 810 1366 815 V1024 H0Z" fill="#74C66A"/>
+      <g><rect x="113" y="600" width="14" height="50" rx="5" fill="#A0703F"/><circle cx="120" cy="580" r="38" fill="#5DB85B"/><circle cx="102" cy="592" r="24" fill="#6CC56A"/></g>
+      <g><rect x="973" y="630" width="14" height="50" rx="5" fill="#A0703F"/><circle cx="980" cy="610" r="38" fill="#5DB85B"/><circle cx="962" cy="622" r="24" fill="#6CC56A"/></g>
+      <g><rect x="1293" y="590" width="14" height="50" rx="5" fill="#A0703F"/><circle cx="1300" cy="570" r="38" fill="#5DB85B"/><circle cx="1282" cy="582" r="24" fill="#6CC56A"/></g>
+      <g fill="#fff"><circle cx="300" cy="760" r="7"/><circle cx="560" cy="780" r="7"/><circle cx="1120" cy="770" r="7"/><circle cx="860" cy="800" r="7"/></g>
+      <g fill="#FFC23D"><circle cx="300" cy="760" r="3"/><circle cx="560" cy="780" r="3"/><circle cx="1120" cy="770" r="3"/><circle cx="860" cy="800" r="3"/></g>
+    </svg>
+  </div>
   <div id="app"></div>
   <div id="overlay"></div>
   <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
