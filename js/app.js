@@ -1030,15 +1030,23 @@ function recommendedBook() {
   const pool = heard.length ? heard : [next ? bookById(next.key) : STORIES[0]];
   return pool.find(b => !S.booksRead[b.id]) || [...pool].sort((a, b) => (S.booksRead[a.id] || 0) - (S.booksRead[b.id] || 0))[0];
 }
+// 그림책·듣기 시간 공통: 주제 탭 (마지막으로 고른 탭 기억)
+let storyCat = 'all';
+const storiesIn = (cat) => cat === 'all' ? STORIES : STORIES.filter(b => STORY_CAT_OF[b.id] === cat);
+function catTabs() {
+  return `<div class="cat-tabs">${STORY_CATS.map(([id, ic, ko]) => `<button class="cat-tab ${storyCat === id ? 'on' : ''}" data-a="cat" data-c="${id}">${ic} ${ko}<small>${storiesIn(id).length}</small></button>`).join('')}</div>`;
+}
 function showLibrary() {
   const rec = recommendedBook();
-  render(topbar() + jennySays("Let's read a book!", '어떤 책을 읽을까요? 표지를 눌러요', 120) + `
-    <div class="book-grid">${STORIES.map((b, i) => `<button class="book" data-a="open" data-i="${i}">
+  const list = storiesIn(storyCat);
+  render(topbar() + jennySays("Let's read a book!", `그림책 ${STORIES.length}권! 표지를 눌러요`, 110) + catTabs() + `
+    <div class="book-grid">${list.map((b, i) => `<button class="book" data-a="open" data-i="${i}">
       ${b.id === rec.id ? '<span class="badge">추천!</span>' : ''}
       <span class="cover">${b.cover}</span><span class="bt en">${esc(b.title)}</span><span class="bk">${esc(b.ko)}</span>
       <span class="read">${S.booksRead[b.id] ? '⭐'.repeat(Math.min(3, S.booksRead[b.id])) : '새 책 ✨'}</span></button>`).join('')}</div>`, {
     ...baseHandlers(),
-    open: (b) => { sfx.page(); readBook(STORIES[+b.dataset.i]); },
+    cat: (b) => { storyCat = b.dataset.c; sfx.tap(); showLibrary(); },
+    open: (b) => { sfx.page(); readBook(list[+b.dataset.i]); },
   });
   say("Let's read a book!");
 }
@@ -1145,15 +1153,16 @@ function showListening() {
   const heard = heardStories();
   const heardIds = new Set(heard.map(b => b.id));
   // 커리큘럼 순서대로 모든 이야기 (아직 안 들은 이야기도 골라서 들을 수 있어요 — 듣기는 많을수록 좋아요)
-  const all = [...new Set([...CURRICULUM.filter(l => l.type === 'story').map(l => bookById(l.key)), ...STORIES])];
-  const list = [...shuffle(heard), ...all.filter(b => !heardIds.has(b.id))].slice(0, 5);
+  const all = [...new Set([...CURRICULUM.filter(l => l.type === 'story').map(l => bookById(l.key)), ...STORIES])].filter(b => storyCat === 'all' || STORY_CAT_OF[b.id] === storyCat);
+  const list = [...shuffle(heard.filter(b => all.includes(b))), ...all.filter(b => !heardIds.has(b.id))].slice(0, 5);
   const playOne = (b, onEnd, label) => readBook(b, { auto: S.settings.autoNext, onEnd, label });
-  render(topbar() + jennySays("It's listening time!", `이야기 ${all.length}개! 그림을 누르면 들려줘요`, 120) + `
+  render(topbar() + jennySays("It's listening time!", `이야기 ${STORIES.length}개! 그림을 누르면 들려줘요`, 110) + catTabs() + `
     <div class="nav-row"><button class="btn" data-a="play" style="font-size:24px;padding:16px 30px">🎧 이어서 듣기 (${list.length}개)</button></div>
     <div class="book-grid">${all.map((b, i) => `<button class="book" data-a="one" data-i="${i}">${heardIds.has(b.id) ? '<span class="badge ok">들었어요</span>' : ''}
       <span class="cover">${b.cover}</span><span class="bt en">${esc(b.title)}</span><span class="bk">${esc(b.ko)}</span>
       <span class="read">${S.booksRead[b.id] ? '⭐'.repeat(Math.min(3, S.booksRead[b.id])) : ''}</span></button>`).join('')}</div>`, {
     ...baseHandlers(),
+    cat: (b) => { storyCat = b.dataset.c; sfx.tap(); showListening(); },
     one: (b) => { sfx.page(); markAct('listen'); playOne(all[+b.dataset.i], showListening, '🎧'); },
     play: () => {
       let n = 0;
