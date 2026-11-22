@@ -37,7 +37,7 @@ css/style.css         디자인 토큰(:root), 큰 터치 영역(최소 64px), �
 js/icons.js           자체 SVG 아이콘 icon()/ui(), 활동별 집 색 HOUSE
 js/sync.js            Firebase 가족 코드 기록 공유 (mergeState·syncNow) — 상태 필드를 추가하면 mergeState도 확인
 firestore.rules       Firestore 보안 규칙 (바꾸면 Firebase 콘솔에 다시 게시)
-js/data.js            모든 학습 콘텐츠: ALPHABET, THEMES, SENTENCES, STORIES, TALKS, VIDEOS, STICKERS, ACTIVITIES, 커리큘럼(맨 아래)
+js/data.js            모든 학습 콘텐츠: ALPHABET, THEMES, SENTENCES, STORIES, TALKS, VIDEO_LIB·LESSON_VIDEOS, STICKERS·STICKER_WORDS, ACTIVITIES, 커리큘럼(맨 아래)
 js/app.js             화면(render + data-a 핸들러), TTS(say/talk), 게임, 부모님 메뉴
 sw.js                 오프라인 캐시 — 배포할 때 CACHE 버전 올리기
 ```
@@ -51,4 +51,6 @@ sw.js                 오프라인 캐시 — 배포할 때 CACHE 버전 올리�
 - 개발 브랜치: `ccr-3a961d81-qy0igz` (여기에 커밋·푸시).
 - 콘텐츠 추가는 가능하면 `js/data.js`만 수정.
 - 확인: `python3 -m http.server` 후 Playwright로 1366×1024 / 1024×1366 화면 스크린샷 + 콘솔 오류 0개.
-- 유튜브는 검색 링크(`yt('검색어')`)로 연결 — 영상 ID를 추측해서 넣지 않는다.
+- 유튜브 영상은 `VIDEO_LIB`에 **공식 채널 영상만**, oEmbed로 채널을 확인한 뒤 넣는다 — 영상 ID를 추측해서 넣지 않는다.
+- 새 이야기를 커리큘럼에 넣을 땐 **듣기 나라 끝(기존 Day 뒤)** 에 붙여 진도가 밀리지 않게 한다.
+- 이야기·대화는 기본 **눌러야 넘어가기**(`S.settings.autoNext`=false) — 새 화면도 이 규칙을 따른다.

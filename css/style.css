@@ -566,3 +566,26 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
 .video-grid > * { min-width: 0; }
 
 .famcode { font-family: var(--en); font-size: 30px; font-weight: 600; letter-spacing: 3px; background: #F1EEFC; color: #5B4BDB; padding: 8px 18px; border-radius: 14px; user-select: all; -webkit-user-select: all; }
+.book .badge.ok { background: var(--mint); box-shadow: 0 3px 0 #26A275; }
+
+/* ---------- 스티커 놀이판 ---------- */
+.board-wrap { display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+.board { position: relative; flex: 1; min-height: 52vh; border-radius: 32px; overflow: hidden; box-shadow: var(--shadow), inset 0 0 0 5px #fff; touch-action: none; }
+.board.bg-meadow { background: linear-gradient(180deg, #BDE7FF 0 55%, #A7DF8F 55% 75%, #84CE73 75%); }
+.board.bg-sea { background: linear-gradient(180deg, #CDEBFF 0 28%, #6CC3FF 28% 60%, #3B97E8 60% 88%, #F3D9A4 88%); }
+.board.bg-space { background: radial-gradient(circle at 20% 30%, #fff 0 2px, transparent 3px), radial-gradient(circle at 70% 20%, #fff 0 2px, transparent 3px), radial-gradient(circle at 45% 70%, #fff 0 1.5px, transparent 3px), radial-gradient(circle at 85% 65%, #fff 0 2px, transparent 3px), radial-gradient(circle at 10% 80%, #fff 0 1.5px, transparent 3px), linear-gradient(180deg, #241C4A, #4B3A8C); }
+.board.bg-room { background: linear-gradient(180deg, #FFE9D6 0 66%, #D9A77A 66%); }
+.placed { position: absolute; transform: translate(-50%, -50%); font-size: min(11vh, 96px); line-height: 1; cursor: grab; user-select: none; -webkit-user-select: none; touch-action: none; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .12)); }
+.placed.dragging { z-index: 5; transform: translate(-50%, -50%) scale(1.2); cursor: grabbing; }
+.trash { position: absolute; right: 14px; bottom: 14px; width: 72px; height: 72px; border-radius: 50%; background: rgba(255, 255, 255, .85); display: grid; place-items: center; font-size: 36px; opacity: 0; transition: .2s; pointer-events: none; }
+.trash.show { opacity: 1; }
+.trash.hot { background: #FF6B8A; transform: scale(1.25); }
+.board-tools { display: flex; gap: 10px; justify-content: center; }
+.bg-btn { width: 64px; height: 64px; border-radius: 20px; background: var(--card); box-shadow: var(--shadow); font-size: 32px; display: grid; place-items: center; }
+.bg-btn.on { outline: 4px solid var(--pink); }
+.tray { display: flex; gap: 10px; overflow-x: auto; padding: 8px 4px 12px; -webkit-overflow-scrolling: touch; }
+.tray-st { flex: none; width: 76px; height: 76px; border-radius: 22px; background: var(--card); box-shadow: var(--shadow); font-size: 44px; display: grid; place-items: center; }
+.tray-st:active, .bg-btn:active { transform: translateY(3px) scale(.95); }
+.book.pack .read { font-size: 16px; }
+@media (max-width: 560px) { .tray-st { width: 60px; height: 60px; font-size: 34px; } .bg-btn { width: 52px; height: 52px; font-size: 26px; } .board { min-height: 46vh; } }
+.choices.four { width: min(80vw, 560px, 56vh); }

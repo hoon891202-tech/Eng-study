@@ -16,7 +16,7 @@ function defaultState() {
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
     history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {}, settingsAt: 0, listsAt: 0, sync: null,
-    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, schedule },
+    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, schedule },
   };
 }
 function load() {
@@ -452,12 +452,12 @@ function startLesson(replay) {
   } else if (l.type === 'story') {
     // 듣기 나라: 이야기를 통째로 듣고 → 단어 → 알아듣기 게임 → 핵심 한마디 (말하기는 권유만)
     const book = bookById(l.key);
-    steps.push(ctx => readBook(book, { auto: true, ctx, onEnd: ctx.next }));
+    steps.push(ctx => readBook(book, { auto: S.settings.autoNext, ctx, onEnd: ctx.next }));
     steps.push(ctx => stepWords(words, ctx, { listen: true }));
     steps.push(ctx => findGame({ targets: words, pool: pool(), rounds: Math.min(4, words.length), ctx }));
     steps.push(ctx => sayItStep({ w: book.say[0], ko: book.say[1], e: book.cover }, ctx));
   } else if (l.type === 'relisten') {
-    l.stories.forEach(k => steps.push(ctx => readBook(bookById(k), { auto: true, ctx, onEnd: ctx.next })));
+    l.stories.forEach(k => steps.push(ctx => readBook(bookById(k), { auto: S.settings.autoNext, ctx, onEnd: ctx.next })));
     steps.push(ctx => findGame({ targets: pickWeighted(words, 5), pool: pool(), rounds: 4, ctx }));
   } else {
     steps.push(ctx => stepWords(words, ctx, { listen: l.stage <= 1 }));
@@ -861,18 +861,50 @@ function showLetterVideos(a) {
 }
 
 /* ---------------- 우리 단어 / 복습 ---------------- */
+/* ---------------- 단어 공부: 단어 묶음 고르기 → 카드 / 그림 찾기 / 짝 맞추기 ---------------- */
+function wordPacks() {
+  const packs = [];
+  if (S.customWords.length) packs.push({ id: 'my', icon: '💝', en: 'My Words', ko: '우리 단어', words: S.customWords.map(x => ({ ...x, custom: true })) });
+  const weak = Object.entries(S.wordStats).filter(([, v]) => v.s >= 2 && v.c / v.s < .7).map(([w]) => w);
+  const weakWords = allWords().concat(S.customWords).filter(x => weak.includes(x.w));
+  if (weakWords.length >= 3) packs.push({ id: 'weak', icon: '💪', en: 'Practice', ko: '연습이 필요한 단어', words: weakWords });
+  const storyW = []; heardStories().forEach(b => storyWords(b).forEach(x => { if (!storyW.some(y => y.e === x.e)) storyW.push(x); }));
+  if (storyW.length >= 3) packs.push({ id: 'story', icon: '📚', en: 'Story Words', ko: '들은 이야기 단어', words: storyW });
+  for (const [k, t] of Object.entries(THEMES)) packs.push({ id: 't:' + k, icon: t.icon, en: t.title, ko: t.ko, words: t.words.map(W) });
+  return packs;
+}
 function startMyWords() {
-  const words = S.customWords;
-  if (!words.length) {
-    render(topbar() + `<div class="center">${jenny(200)}<h1 class="title"><span class="en">My Words</span>우리 아이 맞춤 단어</h1>
-      <p class="hint" style="font-size:24px">아직 단어가 없어요.<br>부모님 메뉴(⚙️)에서 아이가 좋아하는 물건이나<br>사진으로 단어를 추가해 주세요!</p>
-      <button class="btn" data-a="parent" style="font-size:22px;padding:16px 26px">⚙️ 단어 추가하러 가기</button></div>`, { ...baseHandlers(), parent: () => parentGate(showParent) });
-    return;
-  }
-  const pick = pickWeighted(words.map(x => ({ ...x, custom: true })), Math.min(6, words.length));
-  const steps = [ctx => stepWords(pick, ctx)];
-  if (words.length >= 2) steps.push(ctx => findGame({ targets: pick, pool: learnedWords(), rounds: Math.min(4, pick.length + 1), ctx }));
-  runSteps(steps, () => { markAct('mywords'); rewardScreen({ mini: true, stars: 2 }); });
+  const packs = wordPacks();
+  render(topbar() + jennySays("Let's learn words!", '공부하고 싶은 단어 묶음을 골라요', 120) + `
+    <div class="book-grid">${packs.map((p, i) => `<button class="book pack" data-a="pack" data-i="${i}">
+      <span class="cover" style="font-size:64px">${p.icon}</span><span class="bt en">${esc(p.en)}</span><span class="bk">${esc(p.ko)}</span>
+      <span class="read">${p.words.slice(0, 4).map(w => w.img ? '🖼️' : w.e).join(' ')} · ${p.words.length}개</span></button>`).join('')}
+      <button class="book pack" data-a="add"><span class="cover" style="font-size:64px">➕</span><span class="bt en">Add Words</span><span class="bk">부모님: 우리 단어 넣기</span></button></div>`, {
+    ...baseHandlers(),
+    pack: (b) => { sfx.tap(); showPack(packs[+b.dataset.i]); },
+    add: () => parentGate(showParent),
+  });
+  say("Let's learn words!");
+}
+function showPack(p) {
+  const words = p.words;
+  const back = () => showPack(p);
+  const done = () => { markAct('mywords'); rewardScreen({ mini: true, stars: 2 }); };
+  render(topbar() + jennySays(p.en, `${p.ko} · ${words.length}개`, 110) + `
+    <div class="word-row" style="justify-content:center">${words.slice(0, 12).map((w, i) => `<button class="card mini-word" data-a="say" data-i="${i}"><div class="pic">${pic(w)}</div><div class="w">${esc(w.w)}</div>${S.settings.showKorean && w.ko ? `<div class="ko">${esc(w.ko)}</div>` : ''}</button>`).join('')}</div>
+    <div class="nav-row" style="flex-wrap:wrap">
+      <button class="btn" data-a="cards" style="font-size:22px;padding:16px 24px">📇 카드 보기</button>
+      <button class="btn" data-a="find" style="font-size:22px;padding:16px 24px;background:var(--sky)" ${words.length < 2 ? 'disabled' : ''}>🔍 그림 찾기</button>
+      <button class="btn" data-a="memory" style="font-size:22px;padding:16px 24px;background:var(--mint)">🃏 짝 맞추기</button>
+      <button class="btn ghost" data-a="list" style="font-size:22px;padding:16px 24px">⬅️ 단어 묶음</button>
+    </div>`, {
+    ...baseHandlers(),
+    say: (b) => { const w = words[+b.dataset.i]; sfx.tap(); say(w.w); b.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08)' }, { transform: 'scale(1)' }], { duration: 300 }); },
+    cards: () => runSteps([ctx => stepWords(pickWeighted(words, Math.min(8, words.length)), ctx)], done),
+    find: () => findGame({ targets: pickWeighted(words, Math.min(5, words.length)), pool: learnedWords().concat(allWords()), rounds: Math.min(5, Math.max(3, words.length)), onDone: done }),
+    memory: () => memoryGame(pickWeighted(words, Math.min(words.length >= 8 ? 4 : 3, words.length)), null, done),
+    list: startMyWords,
+  });
 }
 function startReview() {
   const pool = learnedWords();
@@ -1056,7 +1088,7 @@ function readBook(book, opt = {}) {
       if (nav !== navTok) return;
       st.classList.remove('reading'); mark(-1);
       if (auto) { await wait(1300); if (nav === navTok) { i++; sfx.page(); show(); } }
-      else { const n = $('#pgNext'); if (n) n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.15)' }, { transform: 'scale(1)' }], { duration: 700, iterations: 2 }); }
+      else pulse('#pgNext');
     }
     setTimeout(() => { if (app.contains($('#st'))) readPage(); }, 350);
   };
@@ -1078,8 +1110,10 @@ function readBook(book, opt = {}) {
   const theEnd = () => {
     if (opt.onEnd) {  // 수업·듣기 시간: 끝 화면 없이 다음으로
       S.booksRead[book.id] = (S.booksRead[book.id] || 0) + 1; markAct('listen'); save();
-      render(topbar(opt.ctx) + `<div class="center">${jenny(200, 'jenny-hop')}<h1 class="title"><span class="en">The End!</span>끝!</h1></div>`, baseHandlers());
-      sfx.ok(); talk('The end!').then(ok => { if (ok) opt.onEnd(); });
+      render(topbar(opt.ctx) + `<div class="center">${jenny(200, 'jenny-hop')}<h1 class="title"><span class="en">The End!</span>끝! 재미있었지?</h1></div>
+        <div class="nav-row"><button class="round-btn" data-a="again" aria-label="다시 듣기">${ui('replay', '#6B5E85')}</button><button class="round-btn primary" data-a="go" id="goNext">${ui('arrowR')}</button></div>`,
+        { ...baseHandlers(), go: () => opt.onEnd(), again: () => { i = 0; show(); } });
+      sfx.ok(); talk('The end!').then(ok => { if (ok && auto) opt.onEnd(); else pulse('#goNext'); });
       return;
     }
     const first = !S.booksRead[book.id];
@@ -1109,21 +1143,24 @@ function readBook(book, opt = {}) {
 /* ---------------- 듣기 시간 (흘려듣기 플레이리스트) ---------------- */
 function showListening() {
   const heard = heardStories();
-  const list = (heard.length ? shuffle(heard).slice(0, 4) : [recommendedBook()]);
-  render(topbar() + jennySays("It's listening time!", '그림을 보면서 편하게 들어요. 밥 먹을 때, 놀 때 틀어둬도 좋아요', 130) + `
-    <div class="center">
-      <div style="font-size:min(20vh,170px)">🎧</div>
-      <div class="word-row">${list.map(b => `<div class="card mini-word"><div class="pic">${b.cover}</div><div class="w" style="font-size:20px">${esc(b.title)}</div></div>`).join('')}</div>
-      <p class="hint">들은 이야기를 반복해서 들려줘요 · 자동으로 넘어가요</p>
-      <button class="btn" data-a="play" style="font-size:28px;padding:20px 40px">▶️ 듣기 시작</button>
-    </div>`, {
+  const heardIds = new Set(heard.map(b => b.id));
+  // 커리큘럼 순서대로 모든 이야기 (아직 안 들은 이야기도 골라서 들을 수 있어요 — 듣기는 많을수록 좋아요)
+  const all = [...new Set([...CURRICULUM.filter(l => l.type === 'story').map(l => bookById(l.key)), ...STORIES])];
+  const list = [...shuffle(heard), ...all.filter(b => !heardIds.has(b.id))].slice(0, 5);
+  const playOne = (b, onEnd, label) => readBook(b, { auto: S.settings.autoNext, onEnd, label });
+  render(topbar() + jennySays("It's listening time!", `이야기 ${all.length}개! 그림을 누르면 들려줘요`, 120) + `
+    <div class="nav-row"><button class="btn" data-a="play" style="font-size:24px;padding:16px 30px">🎧 이어서 듣기 (${list.length}개)</button></div>
+    <div class="book-grid">${all.map((b, i) => `<button class="book" data-a="one" data-i="${i}">${heardIds.has(b.id) ? '<span class="badge ok">들었어요</span>' : ''}
+      <span class="cover">${b.cover}</span><span class="bt en">${esc(b.title)}</span><span class="bk">${esc(b.ko)}</span>
+      <span class="read">${S.booksRead[b.id] ? '⭐'.repeat(Math.min(3, S.booksRead[b.id])) : ''}</span></button>`).join('')}</div>`, {
     ...baseHandlers(),
+    one: (b) => { sfx.page(); markAct('listen'); playOne(all[+b.dataset.i], showListening, '🎧'); },
     play: () => {
       let n = 0;
       const nextBook = () => {
         if (n >= list.length) return rewardScreen({ mini: true, stars: 2 });
         const b = list[n++];
-        readBook(b, { auto: true, onEnd: nextBook, label: `🎧 ${n} / ${list.length}` });
+        playOne(b, nextBook, `🎧 ${n} / ${list.length}`);
       };
       markAct('listen'); nextBook();
     },
@@ -1185,6 +1222,14 @@ function sayItStep(x, ctx, onDone, title = 'Say it with Jenny!') {
   talk([x.w, { rate: .85 }], 500, [x.w, { rate: .85 }], 300, 'Your turn!');
 }
 
+// 다음 버튼을 살짝 반짝여서 "눌러서 넘어가요"를 알려줌
+function pulse(sel) { const n = $(sel); if (n) n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.18)' }, { transform: 'scale(1)' }], { duration: 750, iterations: 3 }); }
+// 제니가 대답한 뒤: 자동 넘김이 꺼져 있으면 ➡️ 버튼이 나타나고 아이가 눌러야 다음으로
+function waitThen(cont) {
+  if (S.settings.autoNext) return cont();
+  const g = $('#goNext'); if (!g) return cont();
+  g.style.visibility = 'visible'; g.onclick = () => { sfx.tap(); cont(); }; pulse('#goNext');
+}
 /* ---------------- 제니와 대화하기 (말하기 마을) ---------------- */
 function showTalkMenu() {
   const keys = Object.keys(TALKS);
@@ -1206,15 +1251,16 @@ function talkGame(key, ctx, onDone) {
     const ask = () => {
       if (round >= 2) { markAct('talk'); return done(); }
       const q = round === 0 ? T.q : 'And what else?';
-      round++;
+      round++; let picked = false;
       render(top() + `${jennySays(q, T.ko, 140)}
         <div class="center"><div class="choices ${items.length === 4 ? 'four' : ''}">${items.map((c, i) => `<button class="card choice" data-a="pick" data-i="${i}" ${picStyle(c, 'min(14vh,120px)')}>${pic(c)}</button>`).join('')}</div>
-        <div class="hint">무엇이든 골라도 정답이에요!</div></div>`, {
+        <div class="hint">무엇이든 골라도 정답이에요!</div></div><div class="nav-row"><button class="round-btn primary" id="goNext" style="visibility:hidden" aria-label="다음">${ui('arrowR')}</button></div>`, {
         ...baseHandlers(),
         jenny: () => talk(q),
         pick: async (b) => {
+          if (picked) return; picked = true;
           const c = items[+b.dataset.i]; b.classList.add('right'); sfx.ok();
-          if (await talk(c.w, 300, T.reply)) sayItStep(c, ctx, ask, 'Your turn!');
+          if (await talk(c.w, 300, T.reply)) waitThen(() => sayItStep(c, ctx, ask, 'Your turn!'));
         },
       });
       talk(q);
@@ -1232,7 +1278,7 @@ function talkGame(key, ctx, onDone) {
       <div class="center">
         ${T.hide ? '' : `<div class="card" style="font-size:min(18vh,150px);padding:10px 40px">${show}</div>`}
         <div class="choices">${choices.map((c, i) => `<button class="card choice" data-a="pick" data-i="${i}">${c[0]}</button>`).join('')}</div>
-      </div>`, {
+      </div><div class="nav-row"><button class="round-btn primary" id="goNext" style="visibility:hidden" aria-label="다음">${ui('arrowR')}</button></div>`, {
       ...baseHandlers(),
       jenny: () => talk(q),
       pick: async (b) => {
@@ -1242,13 +1288,13 @@ function talkGame(key, ctx, onDone) {
           await talk(c[1]);
           if (i === hideAt) {
             solved = true; b.textContent = show; b.classList.add('right'); sfx.ok(); addStars(1, b);
-            if (await talk('Yes! ' + model)) sayItStep({ w: model, e: show, ko: '여기 있다!' }, ctx, round, 'Your turn!');
+            if (await talk('Yes! ' + model)) waitThen(() => sayItStep({ w: model, e: show, ko: '여기 있다!' }, ctx, round, 'Your turn!'));
           } else { b.style.opacity = .45; sfx.soft(); talk('No! Not here.'); }
           return;
         }
         if (c[2]) {
           solved = true; b.classList.add('right'); sfx.ok(); if (!wrongs) addStars(1, b);
-          if (await talk(c[1], 200, model)) sayItStep({ w: model, e: show }, ctx, round, 'Your turn!');
+          if (await talk(c[1], 200, model)) waitThen(() => sayItStep({ w: model, e: show }, ctx, round, 'Your turn!'));
         } else {
           wrongs++; b.classList.remove('wrong'); void b.offsetWidth; b.classList.add('wrong'); sfx.soft();
           talk('Hmm, look again!');
@@ -1261,13 +1307,68 @@ function talkGame(key, ctx, onDone) {
   round();
 }
 
-/* ---------------- 스티커북 ---------------- */
+/* ---------------- 스티커북 + 스티커 놀이판 ---------------- */
+const stickerWord = (st) => STICKER_WORDS[st] || 'sticker';
 function showStickers() {
-  render(topbar() + jennySays(`You have ${S.stickers.length} stickers!`, `스티커 ${S.stickers.length}개를 모았어요! 수업을 마치면 하나씩 받아요`, 120) +
-    `<div class="sticker-grid">${STICKERS.map(s => `<div class="${S.stickers.includes(s) ? '' : 'locked'}" data-a="${S.stickers.includes(s) ? 'st' : ''}">${s}</div>`).join('')}</div>`, {
-    ...baseHandlers(), st: () => { sfx.pop(); confetti(8); },
+  render(topbar() + jennySays(`You have ${S.stickers.length} stickers!`, `스티커 ${S.stickers.length}개! 누르면 영어 이름을 알려줘요`, 110) + `
+    <div class="nav-row"><button class="btn" data-a="board" style="font-size:24px;padding:16px 30px">🎨 스티커 놀이판</button></div>
+    <div class="sticker-grid">${STICKERS.map(st => `<div class="${S.stickers.includes(st) ? '' : 'locked'}" data-a="${S.stickers.includes(st) ? 'st' : 'lock'}" data-s="${st}">${st}</div>`).join('')}</div>`, {
+    ...baseHandlers(),
+    st: (b) => { sfx.pop(); b.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3) rotate(-8deg)' }, { transform: 'scale(1)' }], { duration: 400 }); say(stickerWord(b.dataset.s)); },
+    lock: () => { sfx.soft(); say('Finish a lesson to get it!'); },
+    board: showBoard,
   });
   say(`You have ${S.stickers.length} stickers! Wow!`);
+}
+function showBoard() {
+  if (!S.board) S.board = { bg: 'meadow', items: [] };
+  const B = S.board;
+  const avail = [...new Set([...BOARD_BASICS, ...S.stickers])];
+  render(topbar() + `
+    <div class="board-wrap">
+      <div class="board bg-${B.bg}" id="board">${B.items.map((it, k) => `<div class="placed" data-k="${k}" style="left:${it.x}%;top:${it.y}%">${it.s}</div>`).join('')}
+        <div class="trash" id="trash">🗑️</div></div>
+      <div class="board-tools">${BOARD_BGS.map(([id, ic, en]) => `<button class="bg-btn ${B.bg === id ? 'on' : ''}" data-a="bg" data-bg="${id}" aria-label="${en}">${ic}</button>`).join('')}
+        <button class="bg-btn" data-a="clear" aria-label="모두 지우기">🧽</button></div>
+      <div class="tray">${avail.map(st => `<button class="tray-st" data-a="add" data-s="${st}">${st}</button>`).join('')}</div>
+      <div class="hint" style="text-align:center">아래 스티커를 누르면 붙어요 · 끌어서 옮기고 🗑️로 끌면 지워져요</div>
+    </div>`, {
+    ...baseHandlers(),
+    add: (b) => {
+      if (B.items.length >= 40) { say('The board is full!'); return; }
+      B.items.push({ s: b.dataset.s, x: 25 + Math.random() * 50, y: 20 + Math.random() * 45 }); save(); sfx.pop();
+      say(stickerWord(b.dataset.s)); showBoard();
+      const el = app.querySelector(`.placed[data-k="${B.items.length - 1}"]`); if (el) el.animate([{ transform: 'translate(-50%,-50%) scale(0)' }, { transform: 'translate(-50%,-50%) scale(1.3)' }, { transform: 'translate(-50%,-50%) scale(1)' }], { duration: 450 });
+    },
+    bg: (b) => { B.bg = b.dataset.bg; save(); sfx.tap(); const n = BOARD_BGS.find(x => x[0] === B.bg); say(n ? n[2] : ''); showBoard(); },
+    clear: () => { if (!B.items.length) return; B.items = []; save(); sfx.flip(); say('All clean!'); showBoard(); },
+  });
+  // 끌어서 옮기기 · 누르면 이름 · 휴지통에 놓으면 지우기
+  const board = $('#board'), trash = $('#trash');
+  let drag = null;
+  board.addEventListener('pointerdown', (e) => {
+    const el = e.target.closest('.placed'); if (!el) return;
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    drag = { el, k: +el.dataset.k, x0: e.clientX, y0: e.clientY, moved: false };
+    el.classList.add('dragging'); trash.classList.add('show');
+  });
+  board.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    if (Math.abs(e.clientX - drag.x0) + Math.abs(e.clientY - drag.y0) > 6) drag.moved = true;
+    const r = board.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, (e.clientX - r.left) / r.width * 100)), y = Math.max(0, Math.min(100, (e.clientY - r.top) / r.height * 100));
+    drag.el.style.left = x + '%'; drag.el.style.top = y + '%'; drag.x = x; drag.y = y;
+    const t = trash.getBoundingClientRect(); trash.classList.toggle('hot', e.clientX > t.left && e.clientX < t.right && e.clientY > t.top && e.clientY < t.bottom);
+  });
+  const end = () => {
+    if (!drag) return;
+    const d = drag; drag = null; d.el.classList.remove('dragging'); trash.classList.remove('show');
+    if (trash.classList.contains('hot')) { trash.classList.remove('hot'); B.items.splice(d.k, 1); save(); sfx.flip(); say('Bye-bye!'); showBoard(); return; }
+    if (!d.moved) { sfx.tap(); say(stickerWord(B.items[d.k].s)); d.el.animate([{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: 'translate(-50%,-50%) scale(1.25)' }, { transform: 'translate(-50%,-50%) scale(1)' }], { duration: 350 }); return; }
+    B.items[d.k].x = d.x; B.items[d.k].y = d.y; save();
+  };
+  board.addEventListener('pointerup', end); board.addEventListener('pointercancel', end);
+  say("Let's make a picture!");
 }
 
 /* =========================================================
@@ -1313,6 +1414,7 @@ function showParent() {
         <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '보통 (추천)'], [.9, '조금 빠르게'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
         <div class="row">목소리 <select id="vc" style="max-width:240px"><option value="">자동 선택</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="sk" ${S.settings.showKorean ? 'checked' : ''}> 한국어 뜻 함께 보여주기</label></div>
+        <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="autoNext" ${S.settings.autoNext ? 'checked' : ''}> 이야기·대화 자동으로 넘기기 (끄면 아이가 ➡️를 눌러야 넘어가요)</label></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="mic" ${S.settings.useMic ? 'checked' : ''}> 따라 말하기 녹음 🎤 (녹음은 저장되지 않아요)</label></div>
         <button class="btn" data-a="saveSet">설정 저장</button></div>
     </div>
@@ -1325,6 +1427,10 @@ function showParent() {
     <div class="parent-grid">
       <div class="panel"><h3>💝 맞춤 단어 (우리 단어)</h3>
         <p class="desc">아이가 좋아하는 물건, 가족, 장난감을 단어로 추가하세요. 사진도 넣을 수 있어요. 게임과 복습에 더 자주 나와요.</p>
+        <details style="margin-bottom:12px"><summary style="cursor:pointer;font-weight:600">📋 여러 단어 한 번에 넣기</summary>
+          <p class="desc" style="margin:8px 0">한 줄에 하나씩 <b>영어, 뜻, 이모지</b> (뜻·이모지는 없어도 돼요)<br>예) <code>strawberry, 딸기, 🍓</code> &nbsp; <code>Pororo 뽀로로 🐧</code></p>
+          <textarea id="bulk" rows="5" style="width:100%;border:2px solid #eadff3;border-radius:14px;padding:10px;font-size:16px" placeholder="strawberry, 딸기, 🍓&#10;spoon, 숟가락, 🥄&#10;Pororo 뽀로로 🐧"></textarea>
+          <button class="btn" data-a="bulkAdd" style="margin-top:8px">모두 추가</button></details>
         <div class="row"><input id="cw" type="text" placeholder="영어 (예: Pororo)" style="flex:1"><input id="ck" type="text" placeholder="뜻 (예: 뽀로로)" style="flex:1"></div>
         <div class="row"><input id="ce" type="text" placeholder="이모지 (예: 🐧)" style="width:130px"><label class="btn ghost">📷 사진<input id="cp" type="file" accept="image/*" hidden></label><span id="cpn" class="desc" style="margin:0"></span>
         <button class="btn" data-a="addW">추가</button></div>
@@ -1356,7 +1462,7 @@ function showParent() {
     setDay: () => { S.dayIndex = +$('#daySel').value; S.lastLessonIdx = null; today().lesson = false; save(); toast('진도를 변경했어요'); showParent(); },
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
     saveSet: () => {
-      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, oneLessonPerDay: $('#oneDay').checked });
+      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, oneLessonPerDay: $('#oneDay').checked });
       S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); S.settingsAt = Date.now(); save(); toast('저장했어요');
     },
     addW: async () => {
@@ -1366,6 +1472,11 @@ function showParent() {
       let img = null;
       if (f) { try { img = await readImage(f); } catch (err) { return toast('사진을 불러오지 못했어요'); } }
       S.customWords.push({ w, ko, e: e || '💝', img }); S.listsAt = Date.now(); save(); say(w); showParent();
+    },
+    bulkAdd: () => {
+      const added = parseWordLines($('#bulk').value).filter(x => !S.customWords.some(y => y.w.toLowerCase() === x.w.toLowerCase()));
+      if (!added.length) return toast('추가할 단어가 없어요 (형식을 확인해 주세요)');
+      S.customWords.push(...added); S.listsAt = Date.now(); save(); toast(`${added.length}개 단어를 추가했어요`); showParent();
     },
     sayW: (b) => say(S.customWords[+b.dataset.i].w),
     delW: (b) => { S.customWords.splice(+b.dataset.i, 1); S.listsAt = Date.now(); save(); showParent(); },
@@ -1396,6 +1507,19 @@ function showParent() {
     try { const d = JSON.parse(await f.text()); if (!d || typeof d !== 'object' || !('stars' in d)) throw 0; localStorage.setItem(KEY, JSON.stringify(d)); S = load(); toast('불러왔어요'); showParent(); }
     catch (err) { toast('백업 파일이 올바르지 않아요'); }
   });
+}
+// "apple, 사과, 🍎" 또는 "apple 사과 🍎" 한 줄씩 → 단어 목록
+function parseWordLines(text) {
+  return String(text || '').split(/\n/).map(l => l.trim()).filter(Boolean).map(l => {
+    let w, ko = '', e = '';
+    if (/[,\t]/.test(l)) { [w, ko = '', e = ''] = l.split(/\s*[,\t]\s*/); }
+    else {
+      w = (l.match(/^[A-Za-z][A-Za-z' .-]*/) || [''])[0].trim();
+      ko = (l.match(/[가-힣][가-힣 ]*/) || [''])[0].trim();
+      e = (l.match(/\p{Extended_Pictographic}[\u{FE0F}\u{200D}\p{Extended_Pictographic}]*/u) || [''])[0];
+    }
+    return { w: (w || '').trim(), ko: (ko || '').trim(), e: (e || '').trim() || '💝', img: null };
+  }).filter(x => /^[A-Za-z]/.test(x.w));
 }
 function readImage(file) {
   return new Promise((res, rej) => {
