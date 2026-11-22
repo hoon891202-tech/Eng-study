@@ -16,7 +16,7 @@ function defaultState() {
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
     history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {}, settingsAt: 0, listsAt: 0, sync: null,
-    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, schedule },
+    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, ytPremium: false, schedule },
   };
 }
 function load() {
@@ -579,33 +579,113 @@ function stepWords(words, ctx, opt = {}) {
 }
 
 /* ---------------- 따라쓰기 ---------------- */
+// 따라쓰기: 대문자는 ① 제니가 쓰는 순서를 보여주고 ② 순서대로 한 획씩 따라 그리기, 소문자는 모양 따라 그리기
 function stepTrace(L, ctx, onDone) {
-  let lower = false, color = '#ff7eb0', finished = false;
+  let lower = false, color = '#ff7eb0', finished = false, mode = 'free', demoTok = 0;
   const colors = ['#ff7eb0', '#5bb8ff', '#3fcfa6', '#ff9a3c', '#a07cf5'];
+  const NUM = ['One', 'Two', 'Three', 'Four'];
   render(topbar(ctx) + `
-    ${jennySays(`Trace the letter ${L}!`, '손가락으로 글자를 따라 그려요', 120)}
+    ${jennySays(`Let's write ${L}!`, '제니가 쓰는 순서를 먼저 보여줄게요. 그다음 초록 점부터 따라 그려요', 110)}
     <div class="center">
       <div class="trace-wrap" id="tw"><canvas id="cg"></canvas><canvas id="cd"></canvas></div>
       <div class="trace-tools">${colors.map(c => `<button class="color-dot ${c === color ? 'on' : ''}" data-a="color" data-c="${c}" style="background:${c}"></button>`).join('')}
+        <button class="round-btn" data-a="demo" style="width:64px;height:64px;font-size:30px" aria-label="쓰는 순서 다시 보기">👀</button>
         <button class="round-btn" data-a="case" style="width:64px;height:64px;font-size:26px"><span class="en">Aa</span></button>
         <button class="round-btn" data-a="clear" style="width:64px;height:64px;font-size:30px">🧽</button>
         <button class="round-btn primary" data-a="next" id="traceNext" style="width:64px;height:64px;font-size:30px">${ui('arrowR', '#fff', 32)}</button></div>
     </div>`, {
     ...baseHandlers(),
     color: (b) => { color = b.dataset.c; document.querySelectorAll('.color-dot').forEach(d => d.classList.toggle('on', d === b)); },
-    case: () => { lower = !lower; setup(); },
-    clear: () => setup(),
+    demo: () => setup(true),
+    case: () => { lower = !lower; setup(!lower); },
+    clear: () => setup(false),
     next: () => { markAct('trace'); (onDone || ctx.next)(); },
   });
-  say(`Trace the letter ${L}!`);
   const tw = $('#tw'), cg = $('#cg'), cd = $('#cd');
   const dpr = window.devicePixelRatio || 1;
-  let pts = [], covered = 0, drawing = false, last = null;
   const nav = navTok;
-  async function setup() {
-    finished = false;
+  let pts = [], covered = 0, drawing = false, last = null;
+  let strokes = null, active = 0, size = 0, rad = 0;
+  const strokesFor = () => (!lower && LETTER_STROKES[L]) || null;
+
+  // ---- 공통: 성공
+  function success() {
+    finished = true; sfx.ok(); confetti(25); addStars(1, tw);
+    say(`Great job! ${lower ? L.toLowerCase() : L}!`);
+    const n = $('#traceNext'); if (n) n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 600, iterations: 3 });
+  }
+  // ---- 획 모드: 좌표 변환·점 고르게 나누기
+  function layout() {
+    const w = cg.width, h = cg.height;
+    size = Math.min(w, h) * .8; rad = size * .085;
+    const ox = (w - size) / 2, oy = (h - size) / 2;
+    const map = ([x, y]) => ({ x: ox + x / 100 * size, y: oy + y / 100 * size });
+    strokes = strokesFor().map(st => {
+      const raw = st.map(map), out = [raw[0]];
+      for (let i = 1; i < raw.length; i++) {
+        const a = raw[i - 1], b = raw[i], d = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(d / (size * .025)));
+        for (let k = 1; k <= n; k++) out.push({ x: a.x + (b.x - a.x) * k / n, y: a.y + (b.y - a.y) * k / n });
+      }
+      return out.map(p => ({ ...p, hit: false }));
+    });
+  }
+  function pathOf(g, st, upto = st.length) { g.beginPath(); g.moveTo(st[0].x, st[0].y); for (let i = 1; i < upto; i++) g.lineTo(st[i].x, st[i].y); }
+  function drawGuide() {
+    const g = cg.getContext('2d');
+    g.clearRect(0, 0, cg.width, cg.height); g.lineCap = 'round'; g.lineJoin = 'round';
+    strokes.forEach((st, k) => {
+      g.setLineDash([]); g.lineWidth = size * .13;
+      g.strokeStyle = k < active ? '#FFD1DF' : k === active && mode === 'trace' ? '#FFE79A' : '#EFE7F7';
+      pathOf(g, st); g.stroke();
+      g.setLineDash([size * .03, size * .03]); g.lineWidth = size * .012; g.strokeStyle = '#C9B6E4'; pathOf(g, st); g.stroke();
+    });
+    g.setLineDash([]);
+    for (let k = strokes.length - 1; k >= active; k--) {   // 출발점 번호(지금 그릴 획이 맨 위) + 방향 화살표
+      const st = strokes[k];
+      const now = k === active && mode === 'trace', p = st[0], q = st[Math.min(3, st.length - 1)];
+      if (now) {
+        const ang = Math.atan2(q.y - p.y, q.x - p.x), ar = size * .1, ax = p.x + Math.cos(ang) * size * .12, ay = p.y + Math.sin(ang) * size * .12;
+        g.fillStyle = '#3FC495'; g.beginPath();
+        g.moveTo(ax + Math.cos(ang) * ar * .6, ay + Math.sin(ang) * ar * .6);
+        g.lineTo(ax + Math.cos(ang + 2.4) * ar * .5, ay + Math.sin(ang + 2.4) * ar * .5);
+        g.lineTo(ax + Math.cos(ang - 2.4) * ar * .5, ay + Math.sin(ang - 2.4) * ar * .5); g.fill();
+      }
+      g.fillStyle = now ? '#3FC495' : '#CDBFE0'; g.beginPath(); g.arc(p.x, p.y, size * (now ? .055 : .04), 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.font = `700 ${size * (now ? .06 : .045)}px Fredoka, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(k + 1), p.x, p.y + size * .004);
+    }
+  }
+  // ---- 시범: 연필이 순서대로 그리고 번호를 말해줌
+  async function demo() {
+    const tok = ++demoTok; mode = 'demo'; active = 0; drawGuide();
+    const c = cd.getContext('2d'); c.clearRect(0, 0, cd.width, cd.height);
+    await talk(`Watch Jenny write ${L}!`);
+    for (let k = 0; k < strokes.length; k++) {
+      if (tok !== demoTok || nav !== navTok) return;
+      say(NUM[k] || String(k + 1));
+      const st = strokes[k];
+      for (let i = 2; i <= st.length; i++) {
+        if (tok !== demoTok || nav !== navTok) return;
+        c.clearRect(0, 0, cd.width, cd.height);
+        c.lineCap = 'round'; c.lineJoin = 'round'; c.lineWidth = size * .07; c.strokeStyle = '#FF6B8A';
+        for (let j = 0; j < k; j++) { pathOf(c, strokes[j]); c.stroke(); }
+        pathOf(c, st, i); c.stroke();
+        const p = st[i - 1]; c.fillStyle = '#4B3A5E'; c.beginPath(); c.arc(p.x, p.y, size * .03, 0, Math.PI * 2); c.fill(); // 연필 끝
+        await wait(28);
+      }
+      await wait(350);
+    }
+    if (tok !== demoTok || nav !== navTok) return;
+    await wait(500); startTrace(); talk('Now you try! Start at the green dot.');
+  }
+  function startTrace() {
+    demoTok++; mode = 'trace'; active = 0; finished = false;
+    strokes.forEach(st => st.forEach(p => { p.hit = false; }));
+    cd.getContext('2d').clearRect(0, 0, cd.width, cd.height); drawGuide();
+  }
+  // ---- 소문자: 글자 모양 따라 그리기 (예전 방식)
+  async function setupFont() {
     const w = tw.clientWidth, h = tw.clientHeight;
-    [cg, cd].forEach(c => { c.width = w * dpr; c.height = h * dpr; });
     try { await document.fonts.load(`700 100px Fredoka`); } catch (e) { /* noop */ }
     if (nav !== navTok) return;
     const ch = lower ? L.toLowerCase() : L;
@@ -615,8 +695,7 @@ function stepTrace(L, ctx, onDone) {
     g.textAlign = 'center'; g.textBaseline = 'middle';
     const x = cg.width / 2, y = cg.height / 2 + h * .04 * dpr;
     g.fillStyle = '#f3ecfa'; g.fillText(ch, x, y);
-    g.setLineDash([14 * dpr, 12 * dpr]); g.lineWidth = 4 * dpr; g.strokeStyle = '#cbb6e6'; g.strokeText(ch, x, y);
-    // 글자 영역의 점 샘플링
+    g.setLineDash([14 * dpr, 12 * dpr]); g.lineWidth = 4 * dpr; g.strokeStyle = '#cbb6e6'; g.strokeText(ch, x, y); g.setLineDash([]);
     const img = g.getImageData(0, 0, cg.width, cg.height).data;
     pts = []; const step = Math.round(16 * dpr);
     for (let yy = 0; yy < cg.height; yy += step) for (let xx = 0; xx < cg.width; xx += step) {
@@ -624,29 +703,47 @@ function stepTrace(L, ctx, onDone) {
       if (img[p + 3] > 100) pts.push({ x: xx, y: yy, hit: false });
     }
     covered = 0;
+  }
+  function setup(withDemo) {
+    demoTok++; finished = false;
+    const w = tw.clientWidth, h = tw.clientHeight;
+    [cg, cd].forEach(c => { c.width = w * dpr; c.height = h * dpr; });
     cd.getContext('2d').clearRect(0, 0, cd.width, cd.height);
+    if (strokesFor()) { layout(); if (withDemo) demo(); else { startTrace(); say(`Start at the green dot!`); } }
+    else { mode = 'free'; strokes = null; setupFont(); say(`Trace the letter ${L.toLowerCase()}!`); }
   }
   const pos = (e) => { const r = cd.getBoundingClientRect(); return { x: (e.clientX - r.left) * dpr, y: (e.clientY - r.top) * dpr }; };
   function mark(p) {
+    if (finished) return;
+    if (mode === 'trace') {
+      const st = strokes[active], rr = rad * rad;
+      for (const q of st) if (!q.hit && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < rr) q.hit = true;
+      if (st.filter(q => q.hit).length / st.length >= .75) {
+        active++;
+        if (active >= strokes.length) { drawGuide(); return success(); }
+        tone(660 + active * 120, .12, 'sine', 0, .12); drawGuide(); say(NUM[active] || String(active + 1));
+      }
+      return;
+    }
+    if (mode !== 'free') return;
     const rr = (30 * dpr) ** 2;
     for (const q of pts) if (!q.hit && (q.x - p.x) ** 2 + (q.y - p.y) ** 2 < rr) { q.hit = true; covered++; }
-    if (!finished && pts.length && covered / pts.length > .7) {
-      finished = true; sfx.ok(); confetti(25); addStars(1, tw);
-      say(`Great job! ${lower ? L.toLowerCase() : L}!`);
-      const n = $('#traceNext'); if (n) n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], { duration: 600, iterations: 3 });
-    }
+    if (pts.length && covered / pts.length > .7) success();
   }
-  cd.addEventListener('pointerdown', (e) => { drawing = true; last = pos(e); cd.setPointerCapture(e.pointerId); mark(last); });
+  cd.addEventListener('pointerdown', (e) => {
+    if (mode === 'demo') startTrace();   // 시범 중에 손대면 바로 따라쓰기 시작
+    drawing = true; last = pos(e); cd.setPointerCapture(e.pointerId); mark(last);
+  });
   cd.addEventListener('pointermove', (e) => {
     if (!drawing) return;
     const p = pos(e), c = cd.getContext('2d');
-    c.strokeStyle = color; c.lineWidth = 30 * dpr; c.lineCap = 'round'; c.lineJoin = 'round';
+    c.strokeStyle = color; c.lineWidth = 30 * dpr; c.lineCap = 'round'; c.lineJoin = 'round'; c.setLineDash([]);
     c.beginPath(); c.moveTo(last.x, last.y); c.lineTo(p.x, p.y); c.stroke();
     last = p; mark(p);
   });
   const end = () => { drawing = false; };
   cd.addEventListener('pointerup', end); cd.addEventListener('pointercancel', end);
-  setup();
+  setup(true);
 }
 function showTraceMenu() {
   const learned = new Set(CURRICULUM.slice(0, S.dayIndex).filter(l => l.type === 'letter').map(l => l.key));
@@ -1059,22 +1156,46 @@ function loadYTApi() {
   });
   return ytApi;
 }
+const ytHost = () => S.settings.ytPremium ? 'https://www.youtube.com' : 'https://www.youtube-nocookie.com';
 async function playVideo(v) {
   markAct(v.kind === 'peppa' ? 'story' : 'song'); stopSpeech();
   const p = document.createElement('div');
   p.className = 'player';
-  p.innerHTML = `<div class="topbar"><button class="icon-btn" aria-label="닫기">${ui('arrowL', '#6B5E85', 34)}</button><div class="pill ptitle">${esc(v.t)}</div></div><div class="ad-hint">광고가 나오면 몇 초 뒤 '건너뛰기'를 누르세요. 안 넘어가면 ⬅️로 나와요.</div><div class="frame"><div id="ytp"></div></div>`;
-  const close = (ended) => { if (!p.isConnected) return; p.remove(); if (ended) { sfx.ok(); say(rand(['Did you like it?', 'That was fun!', 'Yay! Great song!'])); } };
+  p.innerHTML = `<div class="topbar"><button class="icon-btn" aria-label="닫기">${ui('arrowL', '#6B5E85', 34)}</button><div class="pill ptitle">${esc(v.t)}</div>${S.settings.ytPremium ? `<a class="btn yt-app" href="https://www.youtube.com/watch?v=${encodeURIComponent(v.yt)}" target="_blank" rel="noopener">▶ 유튜브 앱에서 보기</a>` : ''}</div>
+    <div class="ad-hint">${S.settings.ytPremium ? "프리미엄 광고 없음은 유튜브에 로그인된 곳에서만 돼요. 광고가 나오면 '유튜브 앱에서 보기'를 누르세요." : "광고가 나오면 몇 초 뒤 '건너뛰기'를 누르세요. 안 넘어가면 ⬅️로 나와요."}</div><div class="frame"><div id="ytp"></div></div>`;
+  let player = null, watch = null, stuckFor = 0;
+  const close = (ended) => { if (!p.isConnected) return; clearInterval(watch); p.remove(); if (ended) { sfx.ok(); say(rand(['Did you like it?', 'That was fun!', 'Yay! Great song!'])); } };
   p.querySelector('button').onclick = () => close(false);
   document.body.appendChild(p);
   await loadYTApi();
   if (!p.isConnected) return;
   if (window.YT && window.YT.Player) {
-    new window.YT.Player('ytp', { videoId: v.yt, host: 'https://www.youtube-nocookie.com',
+    // "▶ 다시 재생": 광고 뒤나 자동재생 제한으로 멈춰 있으면 크게 띄워서 아이가 눌러 이어 보기
+    const resume = document.createElement('button');
+    resume.className = 'resume-btn'; resume.hidden = true; resume.innerHTML = `${ui('play', '#fff', 56)}<span>다시 재생</span>`;
+    resume.onclick = () => { resume.hidden = true; stuckFor = -3; try { player.playVideo(); } catch (e) { /* noop */ } };
+    p.querySelector('.frame').appendChild(resume);
+    // 진짜 끝났을 때만 닫기: 광고가 끝날 때도 '끝남' 신호가 올 수 있어서 본 영상 재생 위치로 확인
+    const reallyEnded = () => {
+      try { const d = player.getDuration(), t = player.getCurrentTime(); return d > 5 && t >= d - 2; } catch (e) { return false; }
+    };
+    player = new window.YT.Player('ytp', { videoId: v.yt, host: ytHost(),
       playerVars: { rel: 0, playsinline: 1, modestbranding: 1, autoplay: 1 },
-      events: { onStateChange: (e) => { if (e.data === 0) setTimeout(() => close(true), 500); } } });
+      events: { onStateChange: (e) => {
+        if (e.data === 1) { resume.hidden = true; stuckFor = 0; }
+        if (e.data === 0) setTimeout(() => { if (reallyEnded()) close(true); else { resume.hidden = false; } }, 600);
+      } } });
+    // 멈춤 감시: 상태와 상관없이 재생 위치가 5초 넘게 그대로면(광고 뒤 멈춤·버퍼링·일시정지) 다시 재생 버튼
+    let lastT = -1;
+    watch = setInterval(() => {
+      if (!p.isConnected) return clearInterval(watch);
+      let st = null, t = 0; try { st = player.getPlayerState(); t = player.getCurrentTime() || 0; } catch (e) { return; }
+      if (st === 0) return;
+      stuckFor = (t === lastT) ? stuckFor + 1 : 0; lastT = t;
+      if (stuckFor >= 5) resume.hidden = false;
+    }, 1000);
   } else {
-    p.querySelector('#ytp').outerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.yt)}?rel=0&playsinline=1&autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
+    p.querySelector('#ytp').outerHTML = `<iframe src="${ytHost()}/embed/${encodeURIComponent(v.yt)}?rel=0&playsinline=1&autoplay=1" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>`;
   }
 }
 // 영상 화면: 오늘 영상 → 노래(배운 순서) → 페파피그 → 부모님 추천
@@ -1501,6 +1622,7 @@ function showParent() {
         <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '보통 (추천)'], [.9, '조금 빠르게'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
         <div class="row">목소리 <select id="vc" style="max-width:240px"><option value="">자동 선택</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="sk" ${S.settings.showKorean ? 'checked' : ''}> 한국어 뜻 함께 보여주기</label></div>
+        <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="ytPremium" ${S.settings.ytPremium ? 'checked' : ''}> 유튜브 프리미엄 사용 중 (영상에 "유튜브 앱에서 보기" 버튼 · 로그인 정보로 재생)</label></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="autoNext" ${S.settings.autoNext ? 'checked' : ''}> 이야기·대화 자동으로 넘기기 (끄면 아이가 ➡️를 눌러야 넘어가요)</label></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="mic" ${S.settings.useMic ? 'checked' : ''}> 따라 말하기 녹음 🎤 (녹음은 저장되지 않아요)</label></div>
         <button class="btn" data-a="saveSet">설정 저장</button></div>
@@ -1550,7 +1672,7 @@ function showParent() {
     setDay: () => { S.dayIndex = +$('#daySel').value; S.lastLessonIdx = null; today().lesson = false; save(); toast('진도를 변경했어요'); showParent(); },
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
     saveSet: () => {
-      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, oneLessonPerDay: $('#oneDay').checked });
+      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, ytPremium: $('#ytPremium').checked, oneLessonPerDay: $('#oneDay').checked });
       S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); S.settingsAt = Date.now(); save(); toast('저장했어요');
     },
     addW: async () => {
