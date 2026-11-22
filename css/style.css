@@ -621,3 +621,13 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
 .player .resume-btn[hidden] { display: none; }
 .player .resume-btn:active { transform: scale(.95); }
 @media (max-width: 560px) { .player .resume-btn { width: 160px; height: 160px; font-size: 19px; } }
+
+/* 영상 카드: 채널 배지·길이 */
+.video-card .vbadge.k-bluey { background: #4DA8FF; color: #fff; }
+.video-card .vbadge.k-duggee { background: #FF9A3C; color: #fff; }
+.video-card .vbadge.k-numberblocks { background: #FF6B6B; color: #fff; }
+.video-card .vbadge.k-alphablocks { background: #A07CF5; color: #fff; }
+.video-card .vbadge.k-cocomelon { background: #3FC495; color: #fff; }
+.video-card .vbadge.k-pinkfong { background: #FF5FA2; color: #fff; }
+.video-card .vbadge.k-storytime { background: #FFC23D; }
+.video-card .vlen { position: absolute; right: 8px; bottom: 8px; background: rgba(0, 0, 0, .72); color: #fff; font-family: var(--en); font-size: 13px; font-weight: 500; padding: 2px 7px; border-radius: 6px; }
