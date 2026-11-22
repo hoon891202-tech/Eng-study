@@ -168,6 +168,7 @@ let navTok = 0, onHome = false;
 let handlers = {};
 function render(html, h = {}) {
   navTok++; stopSpeech(); onHome = false;
+  lastTopCtx = pendingTopCtx; pendingTopCtx = null; // 이 화면이 수업 단계인지 (뒤로가기용)
   document.body.classList.remove('parent-mode');
   app.innerHTML = `<div class="screen">${html}</div>`;
   app.scrollTop = 0;
@@ -179,13 +180,42 @@ app.addEventListener('click', (e) => {
   const fn = handlers[b.dataset.a];
   if (fn) fn(b, e);
 });
+let lastTopCtx = null, pendingTopCtx = null;
 function topbar(ctx) {
+  pendingTopCtx = ctx || null;
   const dots = ctx && ctx.total ? `<div class="progress-dots">${Array.from({ length: ctx.total }, (_, i) => `<span class="${i < ctx.idx ? 'on' : ''}">${CARROT}</span>`).join('')}</div>` : '<div class="spacer"></div>';
-  return `<div class="topbar"><button class="icon-btn" data-a="home" aria-label="홈">${icon('home', 38, '#FF6B8A', '#E04A6C')}</button>${dots}${starPill()}</div>`;
+  return `<div class="topbar"><button class="icon-btn" data-a="back" aria-label="뒤로">${ui('arrowL', '#6B5E85', 34)}</button><button class="icon-btn" data-a="home" aria-label="홈">${icon('home', 38, '#FF6B8A', '#E04A6C')}</button>${dots}${starPill()}</div>`;
 }
 const CARROT = icon('carrot', 30, '#FF9A3C', '#4CC38A', '#FFD3A8');
 const starPill = () => `<div class="pill">${icon('sticker', 28, '#FFC23D', '#E9A10F', '#fff')} <b class="en" id="starCount">${S.stars}</b></div>`;
-const baseHandlers = () => ({ home: () => showHome(), jenny: () => { sfx.tap(); say('Hi! I am Jenny!'); } });
+/* ---------------- 뒤로가기 ----------------
+   - 수업 중: 바로 전 단계 (runSteps의 ctx.prev)
+   - 메뉴에서 시작한 활동(게임·대화·따라쓰기·보상 화면): 그 메뉴 화면으로
+   - 그 외: 직전 화면 (화면 기록 navStack) */
+const navStack = [];
+let curScreen = null, navBack = false;
+function trackScreen(fn, skip) {
+  const w = function (...args) {
+    if (skip && skip(args)) return fn.apply(this, args);
+    if (!navBack && curScreen && curScreen.fn !== w) { navStack.push(curScreen); if (navStack.length > 30) navStack.shift(); }
+    navBack = false;
+    const sc = { fn: w, args, tok: 0 };
+    curScreen = sc;
+    const r = fn.apply(this, args);
+    sc.tok = navTok;
+    return r;
+  };
+  return w;
+}
+function goBack() {
+  sfx.tap();
+  if (lastTopCtx && lastTopCtx.prev) return lastTopCtx.prev();
+  if (curScreen && navTok !== curScreen.tok) { navBack = true; return curScreen.fn(...curScreen.args); }
+  const prev = navStack.pop();
+  if (!prev) return showHome();
+  navBack = true; prev.fn(...prev.args);
+}
+const baseHandlers = () => ({ back: goBack, home: () => showHome(), jenny: () => { sfx.tap(); say('Hi! I am Jenny!'); } });
 
 /* ---------------- 별 / 레벨 ---------------- */
 function levelInfo(stars) {
@@ -425,7 +455,11 @@ function showOnboarding() {
    ========================================================= */
 function runSteps(steps, onDone) {
   let i = 0;
-  const go = () => { if (i >= steps.length) return onDone(); const st = steps[i++]; st({ next: go, idx: i - 1, total: steps.length }); };
+  const go = () => {
+    if (i >= steps.length) return onDone();
+    const st = steps[i++];
+    st({ next: go, prev: i > 1 ? () => { i -= 2; go(); } : null, idx: i - 1, total: steps.length });
+  };
   go();
 }
 
@@ -812,12 +846,14 @@ function showABC() {
   const learned = new Set(CURRICULUM.slice(0, S.dayIndex).filter(l => l.type === 'letter').map(l => l.key));
   render(topbar() + jennySays('A, B, C! Tap a letter!', '글자를 누르면 읽는 법과 단어를 알려줘요', 120) + `
     <div class="abc-grid">${ALPHABET.map(a => `<button class="${learned.has(a.L) ? 'learned' : ''}" data-a="letter" data-l="${a.L}">${a.L}${a.L.toLowerCase()}<small>${a.name}</small></button>`).join('')}</div>
-    <div class="nav-row"><button class="btn" data-a="song" style="font-size:22px;padding:16px 26px">🎵 ABC 노래 보기</button>
+    <div class="nav-row"><button class="btn" data-a="sing" style="font-size:22px;padding:16px 26px">🎵 제니랑 ABC 노래</button>
+    <button class="btn" data-a="song" style="font-size:22px;padding:16px 26px;background:var(--sky)">📺 ABC 영상</button>
     <button class="btn" data-a="trace" style="font-size:22px;padding:16px 26px;background:var(--mint)">✏️ 따라쓰기</button></div>`, {
     ...baseHandlers(),
     trace: () => showTraceMenu(),
     letter: (b) => { sfx.tap(); letterDetail(b.dataset.l); },
     song: () => playVideo(vid('vD98OvvDNEs')),
+    sing: () => singABC(),
   });
   say('A, B, C! Tap a letter!');
 }
@@ -858,6 +894,47 @@ function showLetterVideos(a) {
     v: (b) => playVideo(list[+b.dataset.i]),
     back: () => letterDetail(a.L),
   });
+}
+
+/* ---------------- 제니랑 ABC 노래 (앱 안 연주 · 광고 없음) ----------------
+   전래 동요 곡조(공공 저작물). 글자마다 음 하나 + 제니가 글자 이름 + 글자판이 통통 */
+const ABC_TUNE = [['A', 'C', 1], ['B', 'C', 1], ['C', 'G', 1], ['D', 'G', 1], ['E', 'A', 1], ['F', 'A', 1], ['G', 'G', 2],
+  ['H', 'F', 1], ['I', 'F', 1], ['J', 'E', 1], ['K', 'E', 1], ['L', 'D', .5], ['M', 'D', .5], ['N', 'D', .5], ['O', 'D', .5], ['P', 'C', 2],
+  ['Q', 'G', 1], ['R', 'G', 1], ['S', 'F', 2], ['T', 'E', 1], ['U', 'E', 1], ['V', 'D', 2],
+  ['W', 'G', 1.5], ['X', 'F', .5], ['Y', 'E', 1], ['Z', 'D', 2]];
+const NOTE_HZ = { C: 261.6, D: 293.7, E: 329.6, F: 349.2, G: 392, A: 440 };
+function singABC() {
+  let playing = false, slow = false;
+  render(topbar() + jennySays("Let's sing the ABC song!", '▶️를 누르면 제니가 불러요 · 글자를 누르면 읽어줘요', 110) + `
+    <div class="abc-sing">${ABC_TUNE.map(([L], k) => `<button class="sing-l" data-a="tap" data-k="${k}" id="sl${k}">${L}<small>${L.toLowerCase()}</small></button>`).join('')}</div>
+    <div class="nav-row"><button class="round-btn primary" data-a="play" id="playBtn" aria-label="부르기">${ui('play')}</button>
+      <button class="round-btn" data-a="slow" id="slowBtn" aria-label="천천히">🐢</button></div>`, {
+    ...baseHandlers(),
+    play: () => sing(),
+    slow: (b) => { slow = !slow; b.classList.toggle('primary', slow); },
+    tap: (b) => { const [L, n] = ABC_TUNE[+b.dataset.k]; tone(NOTE_HZ[n], .3, 'triangle', 0, .14); say(L + '.'); bounce(+b.dataset.k); },
+  });
+  const bounce = (k) => { const el = $('#sl' + k); if (el) el.animate([{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-14px) scale(1.18)' }, { transform: 'translateY(0) scale(1)' }], { duration: 380 }); };
+  const mark = (k) => app.querySelectorAll('.sing-l').forEach((el, i) => el.classList.toggle('on', i === k));
+  async function sing() {
+    if (playing) return; playing = true;
+    const nav = navTok, beat = slow ? .85 : .6;
+    $('#playBtn').classList.add('busy');
+    if (!(await talk("Let's sing!"))) return;
+    for (let k = 0; k < ABC_TUNE.length; k++) {
+      if (nav !== navTok) return;
+      const [L, n, d] = ABC_TUNE[k];
+      mark(k); bounce(k);
+      tone(NOTE_HZ[n], d * beat * .95, 'triangle', 0, .13); tone(NOTE_HZ[n] / 2, d * beat * .9, 'sine', 0, .05);
+      say(L + '.', { rate: slow ? 1 : 1.25 });
+      await wait(d * beat * 1000);
+    }
+    mark(-1);
+    if (!(await talk(300, 'Now I know my A B C!', 'Next time, sing with me!'))) return;
+    sfx.fanfare(); confetti(30); markAct('song'); markAct('abc'); addStars(1, $('#playBtn'));
+    playing = false; const pb = $('#playBtn'); if (pb) pb.classList.remove('busy');
+  }
+  say("Let's sing the ABC song!");
 }
 
 /* ---------------- 우리 단어 / 복습 ---------------- */
@@ -986,7 +1063,7 @@ async function playVideo(v) {
   markAct(v.kind === 'peppa' ? 'story' : 'song'); stopSpeech();
   const p = document.createElement('div');
   p.className = 'player';
-  p.innerHTML = `<div class="topbar"><button class="icon-btn" aria-label="닫기">${ui('arrowL', '#6B5E85', 34)}</button><div class="pill ptitle">${esc(v.t)}</div></div><div class="frame"><div id="ytp"></div></div>`;
+  p.innerHTML = `<div class="topbar"><button class="icon-btn" aria-label="닫기">${ui('arrowL', '#6B5E85', 34)}</button><div class="pill ptitle">${esc(v.t)}</div></div><div class="ad-hint">광고가 나오면 몇 초 뒤 '건너뛰기'를 누르세요. 안 넘어가면 ⬅️로 나와요.</div><div class="frame"><div id="ytp"></div></div>`;
   const close = (ended) => { if (!p.isConnected) return; p.remove(); if (ended) { sfx.ok(); say(rand(['Did you like it?', 'That was fun!', 'Yay! Great song!'])); } };
   p.querySelector('button').onclick = () => close(false);
   document.body.appendChild(p);
@@ -1016,7 +1093,8 @@ function showVideos(cat) {
     html += `<h2 class="section-title">${ic} ${name}</h2><div class="video-grid">${vs.map(v => { list.push(v); return videoCard(v, list.length - 1); }).join('')}</div>`;
   }
   const t = cat === 'songs' ? ['Sing along!', '그림을 누르면 바로 나와요'] : ["It's video time!", '그림을 누르면 바로 나와요'];
-  render(topbar() + jennySays(t[0], t[1], 120) + html, { ...baseHandlers(), v: (b) => playVideo(list[+b.dataset.i]) });
+  const own = `<div class="nav-row"><button class="btn" data-a="sing" style="font-size:22px;padding:16px 26px">🐰 제니랑 ABC 노래 (광고 없음)</button></div>`;
+  render(topbar() + jennySays(t[0], t[1], 120) + own + html, { ...baseHandlers(), v: (b) => playVideo(list[+b.dataset.i]), sing: () => singABC() });
   say(t[0]);
 }
 
@@ -1395,7 +1473,7 @@ function showParent() {
   const sch = S.settings.schedule;
 
   render(`
-    <div class="topbar"><button class="icon-btn" data-a="home">${icon('home', 34, '#5B4BDB', '#4434B8')}</button><h1 style="margin:0;font-size:32px;flex:1">부모님 메뉴</h1></div>
+    <div class="topbar"><button class="icon-btn" data-a="back" aria-label="뒤로">${ui('arrowL', '#5B4BDB', 32)}</button><button class="icon-btn" data-a="home">${icon('home', 34, '#5B4BDB', '#4434B8')}</button><h1 style="margin:0;font-size:32px;flex:1">부모님 메뉴</h1></div>
     <div class="panel"><h3>📊 학습 현황</h3>
       <div class="stats"><div><b>${lv.lv}</b>레벨</div><div><b>${S.stars}</b>모은 별</div><div><b>${streak()}</b>연속 학습일</div><div><b>${learnedCnt}</b>배운 단어</div><div><b>${Object.keys(S.booksRead).length}/${STORIES.length}</b>읽은 그림책</div></div>
       <p class="desc" style="margin-top:14px">오늘 학습 ${Math.round(t.sec / 60)}분 · 최근 7일 ${Math.round(minsWeek / 60)}분 · 현재 진도 <b>Day ${S.dayIndex}</b> ${esc(cl.ko)} (${esc(cl.en)})</p>
@@ -1467,6 +1545,7 @@ function showParent() {
       <div class="row"><button class="btn" data-a="export">백업 파일 저장</button><label class="btn ghost">백업 불러오기<input id="imp" type="file" accept="application/json,.json" hidden></label>
       <button class="btn danger" data-a="reset">전체 초기화</button></div></div>
     <div style="height:20px"></div>`, {
+    back: goBack,
     home: () => showHome(),
     setDay: () => { S.dayIndex = +$('#daySel').value; S.lastLessonIdx = null; today().lesson = false; save(); toast('진도를 변경했어요'); showParent(); },
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
@@ -1552,6 +1631,14 @@ function toast(msg) {
 
 /* ---------------- 시작 ---------------- */
 if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
+// 뒤로가기용 화면 등록 (홈에 오면 기록 초기화)
+showLibrary = trackScreen(showLibrary); showListening = trackScreen(showListening); showTalkMenu = trackScreen(showTalkMenu);
+showGames = trackScreen(showGames); startMyWords = trackScreen(startMyWords); showPack = trackScreen(showPack);
+showABC = trackScreen(showABC); letterDetail = trackScreen(letterDetail); showTraceMenu = trackScreen(showTraceMenu);
+showLetterVideos = trackScreen(showLetterVideos); singABC = trackScreen(singABC); showVideos = trackScreen(showVideos); showStickers = trackScreen(showStickers);
+showBoard = trackScreen(showBoard); showParent = trackScreen(showParent);
+readBook = trackScreen(readBook, (a) => !!(a[1] && a[1].onEnd)); // 수업·듣기 시간 속 이야기는 단계로 취급
+{ const home0 = showHome; showHome = function (...a) { navStack.length = 0; navBack = false; curScreen = { fn: showHome, args: [], tok: 0 }; const r = home0.apply(this, a); curScreen.tok = navTok; return r; }; }
 function onSyncChanged() { if (onHome) showHome(); }
 showHome();
 if (S.sync && S.sync.code) syncNow().then(r => { if (r.changed) onSyncChanged(); });

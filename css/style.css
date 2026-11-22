@@ -603,3 +603,14 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
   .book { aspect-ratio: 4 / 5; }
   .book .cover { font-size: 78px; }
 }
+
+/* 제니랑 ABC 노래 */
+.abc-sing { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; width: min(96vw, 1000px); margin: 0 auto; }
+.sing-l { position: relative; aspect-ratio: 1; border-radius: 22px; background: var(--card); box-shadow: var(--shadow); font-family: var(--en); font-weight: 700; font-size: min(7vh, 58px); color: var(--ink); }
+.sing-l small { position: absolute; right: 10px; bottom: 6px; font-size: 18px; color: var(--ink-soft); }
+.sing-l.on { background: var(--yellow); color: var(--ink); box-shadow: 0 6px 0 #E9A10F; }
+.sing-l:nth-child(7n+1).on, .sing-l:nth-child(7n+4).on { background: #FFB3C7; }
+.round-btn.busy { opacity: .5; }
+.ad-hint { color: #fff; opacity: .8; font-size: 16px; text-align: center; }
+@media (orientation: portrait) { .abc-sing { grid-template-columns: repeat(6, 1fr); } }
+@media (max-width: 560px) { .abc-sing { grid-template-columns: repeat(5, 1fr); gap: 8px; } .sing-l { font-size: 32px; border-radius: 16px; } .sing-l small { font-size: 13px; right: 6px; } }
