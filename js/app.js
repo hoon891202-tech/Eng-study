@@ -119,6 +119,10 @@ let VOICE_MAP = null;
 const voiceAudio = new Audio();
 voiceAudio.preload = 'auto';
 fetch('audio/manifest.json').then(r => r.ok ? r.json() : null).then(m => { VOICE_MAP = m; }).catch(() => { /* 기기 음성만 사용 */ });
+/* ---- 실제 사진 (위키미디어 공용 PD·CC0·CC BY — images/words/credits.json, 천천히 늘려 가는 중) ---- */
+let PHOTOS = {};
+fetch('images/words/credits.json').then(r => r.ok ? r.json() : {}).then(m => { PHOTOS = m || {}; }).catch(() => {});
+const photoOf = (w) => (w && PHOTOS[String(w).toLowerCase()]) || null;
 function voiceClip(text) {
   const v = S.settings.jennyVoice || 'heart';
   if (v === 'device') return null;
@@ -683,7 +687,7 @@ function stepWords(words, ctx, opt = {}) {
   let i = 0;
   const line = (x) => opt.sentence ? x.w : opt.review ? `${x.w[0].toUpperCase()} is for ${x.w}.` : opt.letter ? `${opt.letter} is for ${x.w}!` : x.w;
   const show = () => {
-    const x = words[i];
+    const x = words[i], ph = !opt.sentence && !x.img ? photoOf(x.w) : null; let real = false;
     render(topbar(ctx) + `
       ${jennySays(opt.sentence ? 'Listen and say it!' : opt.listen ? 'Listen and look!' : 'Say it with me!', opt.listen ? '잘 듣고 그림을 봐요 (따라 하고 싶으면 해도 돼요)' : '잘 듣고 따라 말해요', 120)}
       <div class="center">
@@ -697,10 +701,12 @@ function stepWords(words, ctx, opt = {}) {
       <div class="nav-row">
         <button class="round-btn" data-a="prev" ${i === 0 ? 'style="visibility:hidden"' : ''}>${ui('arrowL', '#6B5E85')}</button>
         <button class="round-btn speak" data-a="say">${ui('speaker')}</button>
+        ${ph ? `<button class="round-btn photo-btn" data-a="photo" aria-label="진짜 사진 보기">📷</button>` : ''}
         <button class="round-btn primary" data-a="next">${ui('arrowR')}</button>
       </div>`, {
       ...baseHandlers(),
       say: () => { sfx.tap(); talk(line(x)); },
+      photo: (b) => { sfx.tap(); real = !real; const el = $('.word-card .pic'); el.classList.toggle('is-photo', real); el.innerHTML = real ? `<img class="real-photo" src="${ph.img}" alt="">` : pic(x); b.textContent = real ? '🎨' : '📷'; if (real) talk("Look!", 200, x.w); },
       prev: () => { i--; show(); },
       next: () => { stat(x.w, true); i++; if (i >= words.length) ctx.next(); else show(); },
     });
@@ -1846,6 +1852,10 @@ function showParent() {
         <div>${g.titles.map(t => `<span class="chip" style="display:inline-flex;margin:3px;font-size:14px;box-shadow:none;background:#F1EEFC;padding:6px 10px">${esc(t)}</span>`).join('')}</div></div>`; }).join('')}</div>
       <p class="desc" style="margin-top:14px"><b>보는 법</b>: 꼭 영어 원판으로 · 같은 편을 여러 번 · 하루 1~2편 · 처음엔 옆에서 같이 보며 "Look! Muddy puddles!"처럼 한마디씩.<br>
       <b>유튜브 키즈를 쓸 때</b>: 부모 설정(자물쇠) → 아이 프로필 → 콘텐츠 설정을 <b>"승인된 콘텐츠만"</b>으로 바꾸고 위 채널만 허용하면 다른 영상으로 빠지지 않아요. 좋은 에피소드를 찾으면 아래 '즐겨찾기 영상'에 링크를 넣어 주세요.</p></div>
+
+    ${Object.keys(PHOTOS).length ? `<div class="panel"><h3>📷 실제 사진 출처</h3>
+      <p class="desc">단어 카드의 📷 버튼을 누르면 실제 사진이 나와요. 사진은 위키미디어 공용의 자유 이용 사진(퍼블릭 도메인·CC0·CC BY)이고, 저작자 표시는 아래와 같아요.</p>
+      <details><summary class="desc" style="cursor:pointer">사진 ${Object.keys(PHOTOS).length}장 출처 보기</summary><ul class="desc credits">${Object.entries(PHOTOS).map(([w, c]) => `<li><b>${esc(w)}</b> — ${esc(c.artist || '작자 미상')} · ${esc(c.license)} · <a href="${esc(c.page || '#')}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details></div>` : ''}
 
     <div class="panel"><h3>💾 데이터</h3>
       <p class="desc">학습 기록은 이 아이패드에만 저장돼요. 가끔 백업해 두면 안전해요.</p>

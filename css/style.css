@@ -639,3 +639,10 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
 @media (max-width: 560px) { .review-preview .mini-word { width: 28vw; padding: 10px 4px; } .review-preview .pic { font-size: 48px; } }
 .panel select, .panel input[type=text] { max-width: 100%; }
 .parent-grid > * { min-width: 0; }
+
+/* 실제 사진 단어 카드 */
+.word-card .pic.is-photo { font-size: 0 !important; }
+.word-card .pic .real-photo { width: min(30vh, 260px); height: min(24vh, 210px); object-fit: cover; border-radius: 22px; box-shadow: 0 4px 0 rgba(0,0,0,.08); }
+.photo-btn { font-size: 34px; }
+.credits { max-height: 260px; overflow: auto; padding-left: 18px; line-height: 1.6; font-size: 14px; }
+.credits a { color: inherit; }
