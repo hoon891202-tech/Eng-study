@@ -223,7 +223,7 @@ function sayClip(text, url, opt) {
     voiceAudio.onerror = fallback;
     voiceAudio.ontimeupdate = opt.onBoundary ? () => { if (tok === speakTok && voiceAudio.duration) opt.onBoundary(Math.floor(voiceAudio.currentTime / voiceAudio.duration * text.length)); } : null;
     voiceAudio.src = url;
-    voiceAudio.playbackRate = Math.max(.5, Math.min(1.6, (opt.rate || 1) * S.settings.rate / .9));
+    voiceAudio.playbackRate = Math.max(.5, Math.min(1.6, (opt.rate || 1) * S.settings.rate)); // 보통(0.9) = 녹음보다 10% 천천히
     document.body.classList.add('talking');
     voiceAudio.play().catch(fallback);
     setTimeout(() => { if (!finished && voiceAudio.paused && voiceAudio.currentTime === 0) fallback(); }, 4000); // 못 불러오면 기기 음성으로

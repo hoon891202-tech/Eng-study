@@ -117,7 +117,7 @@
 ---
 
 ## 🔄 진행 중
-- [ ] **제니 목소리 2단계 — 녹음 음성(Kokoro, Apache-2.0)**: 사용자가 **Heart·Bella** 선택(2026-11-23). 앱 코드 완료(v0.14: `voiceClip`·`sayClip`, 녹음 있으면 mp3 재생·없으면 기기 음성, 속도=재생 속도, 단어 하이라이트=재생 위치, 부모님 메뉴 "제니 목소리" Heart/Bella/기기, 첫 터치 무음 재생으로 iOS 잠금 해제). 고정 문장 2,700개 녹음 중 → 끝나면 `audio/manifest.json` + `audio/heart|bella/*.mp3`(두 목소리 모두 있는 문장만) 넣고 배포. 녹음 도구: scratchpad/kokoro (extract.js → texts.json, generate.py <voice>, publish.py)
+- [x] **제니 목소리 2단계 — 녹음 음성(Kokoro, Apache-2.0) (v0.16)**: Heart·Bella 각 2,501문장 녹음(오류 0, 약 36MB, mp3 ~39kbps) → `audio/manifest.json`(소문자 정규화 문장→sha1 12자) + `audio/heart|bella/*.mp3`. 실제 흐름 측정: 말 42개 중 40개 녹음 재생(나머지는 이름·숫자 들어간 말 → 기기 음성 또는 기기 안 Kokoro). 기본 속도 '보통'=녹음보다 10% 천천히. 녹음 도구: scratchpad/kokoro (extract.js → texts.json, generate.py <voice>, qa.py, publish.py) — 새 문장 추가 시 다시 돌려야 함
 - [x] **이름·우리 단어도 제니 목소리로 (v0.15)**: 부모님 메뉴 옵션(기본 꺼짐). 켜면 `js/tts-worker.js`(module worker)가 jsDelivr의 kokoro-js + Hugging Face 모델(q8)을 한 번 받아 저장, 아이 이름 인사·우리 단어·기기 음성으로 읽힌 말을 조용할 때 하나씩 만들어 `jenny-local-voice-v1` 캐시에 `lv/<voice>/<hash>.wav`(16비트)로 저장 → `voiceClip`이 녹음 다음 순서로 사용. 작업 서버 테스트: 모델 12초, 말 하나 약 8초, 84KB. *아이패드·폴드 실제 속도·메모리 확인 필요*
 - [ ] **실제 사진 단어 카드**: 위키미디어 공용(우수 사진, PD·CC0·CC BY만) 검색 스크립트 준비 — 2026-11-23 요청이 빨라 429(요청 과다)로 막힘 → 나중에 천천히 재시도. 대안: Pixabay/Pexels(무료 API 키 필요)
 
@@ -144,6 +144,7 @@
 |---|---|---|
 | 2026-11-21 | v0.1 | 앱 첫 버전: 커리큘럼, 알파벳·따라쓰기, 게임 4종, 영상 추천, 부모님 메뉴, PWA |
 | 2026-11-21 | v0.2 | 시작 문서(CLAUDE.md/PROGRESS.md), 제니 그림책 8권, 부담 없는 오답 힌트 |
+| 2026-11-23 | v0.16 | 제니 녹음 목소리 배포: Heart·Bella 각 2,501개 mp3(약 36MB), 기본 재생 10% 천천히 |
 | 2026-11-23 | v0.15 | 이름·우리 단어도 제니 목소리로: 기기 안 Kokoro(kokoro-js 1.2.1, q8 모델 ~90MB, Web Worker) → 녹음 없는 말을 백그라운드에서 만들어 Cache Storage에 저장·재생, SW가 모델·만든 목소리 캐시는 지우지 않게 |
 | 2026-11-23 | v0.14 | 녹음 음성 재생 코드(Heart/Bella 선택, 없으면 기기 음성), 부모님 메뉴 세로 화면 넘침 수정 — 녹음 파일은 녹음 완료 후 추가 |
 | 2026-11-23 | v0.13 | 자연스러운 기기 음성 자동 선택·안내, 대화 9개 추가(17개), 복습 미리보기·4가지 방식 |

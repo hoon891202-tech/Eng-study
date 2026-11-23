@@ -1,6 +1,6 @@
 // 오프라인 지원: 앱 파일을 캐시하고, 온라인이면 백그라운드에서 최신 버전으로 갱신
 // (업데이트 때 지우는 건 앱 자기 캐시뿐 — 제니 목소리 모델(transformers-cache)·만든 목소리(jenny-local-voice-v1)는 유지)
-const CACHE = 'jenny-english-v15';
+const CACHE = 'jenny-english-v16';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/data.js', 'js/icons.js', 'js/sync.js', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
