@@ -16,7 +16,7 @@ function defaultState() {
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
     history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {}, settingsAt: 0, listsAt: 0, sync: null,
-    settings: { timeLimit: 20, rate: 0.9, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, ytPremium: false, schedule },
+    settings: { timeLimit: 20, rate: 0.9, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, ytPremium: false, jennyVoice: 'heart', schedule },
   };
 }
 function load() {
@@ -112,12 +112,50 @@ function pickVoice(lang) {
   return voices.find(v => v.lang.toLowerCase().startsWith(lang.slice(0, 2)));
 }
 let speakTok = 0;
-function stopSpeech() { speakTok++; if (hasTTS) speechSynthesis.cancel(); document.body.classList.remove('talking'); }
+function stopSpeech() { speakTok++; if (hasTTS) speechSynthesis.cancel(); try { voiceAudio.pause(); } catch (e) { /* noop */ } document.body.classList.remove('talking'); }
+/* ---- 제니 녹음 음성 (Kokoro 오픈소스 AI 음성으로 미리 녹음한 mp3) ----
+   audio/manifest.json: { 소문자 문장: 파일 이름 }, audio/<heart|bella>/<이름>.mp3 — 녹음이 없는 문장(이름·우리 단어)은 기기 음성 */
+let VOICE_MAP = null;
+const voiceAudio = new Audio();
+voiceAudio.preload = 'auto';
+fetch('audio/manifest.json').then(r => r.ok ? r.json() : null).then(m => { VOICE_MAP = m; }).catch(() => { /* 기기 음성만 사용 */ });
+function voiceClip(text) {
+  const v = S.settings.jennyVoice || 'heart';
+  if (v === 'device' || !VOICE_MAP) return null;
+  const h = VOICE_MAP[String(text).trim().replace(/\s+/g, ' ').toLowerCase()];
+  return h ? `audio/${v}/${h}.mp3` : null;
+}
 function say(text, opt = {}) {
+  const lang0 = opt.lang || 'en-US';
+  const clip = text && lang0.startsWith('en') ? voiceClip(text) : null;
+  if (clip) return sayClip(text, clip, opt);
+  return sayTTS(text, opt);
+}
+// 녹음 재생: 속도 설정은 재생 속도로(음 높이 유지), 단어 하이라이트는 재생 위치로 대략 맞춤
+function sayClip(text, url, opt) {
+  return new Promise(res => {
+    const tok = ++speakTok;
+    if (hasTTS) speechSynthesis.cancel();
+    let finished = false;
+    const done = () => { if (finished) return; finished = true; voiceAudio.ontimeupdate = null; if (tok === speakTok) document.body.classList.remove('talking'); res(); };
+    const fallback = () => { if (finished || tok !== speakTok) return; finished = true; sayTTS(text, opt).then(res); };
+    voiceAudio.onended = done;
+    voiceAudio.onerror = fallback;
+    voiceAudio.ontimeupdate = opt.onBoundary ? () => { if (tok === speakTok && voiceAudio.duration) opt.onBoundary(Math.floor(voiceAudio.currentTime / voiceAudio.duration * text.length)); } : null;
+    voiceAudio.src = url;
+    voiceAudio.playbackRate = Math.max(.5, Math.min(1.6, (opt.rate || 1) * S.settings.rate / .9));
+    document.body.classList.add('talking');
+    voiceAudio.play().catch(fallback);
+    setTimeout(() => { if (!finished && voiceAudio.paused && voiceAudio.currentTime === 0) fallback(); }, 4000); // 못 불러오면 기기 음성으로
+    setTimeout(done, 20000);
+  });
+}
+function sayTTS(text, opt = {}) {
   return new Promise(res => {
     if (!hasTTS || !text) return res();
     const lang = opt.lang || 'en-US';
     const tok = ++speakTok;
+    try { voiceAudio.pause(); } catch (e) { /* noop */ }
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang;
@@ -146,6 +184,10 @@ async function talk(...lines) {
 }
 
 // iOS: 첫 터치 때 오디오/음성 잠금 해제
+document.addEventListener('pointerdown', function unlockVoice() {
+  try { voiceAudio.src = 'data:audio/mpeg;base64,//OExAAAAAAAAAAAAFhpbmcAAAAPAAAABwAAAWgAJCQkJCQkJCQkJCQkJCRJSUlJSUlJSUlJSUlJSW1tbW1tbW1tbW1tbW1tkpKSkpKSkpKSkpKSkpKStra2tra2tra2tra2trbb29vb29vb29vb29vb2///////////////////AAAACkxBTUUzLjEwMAQ4AAAAAAAAAAAVCCQEICEAAZoAAAFo3WCc1wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//MUxAAAAANIAAAAAExBTUUzLjEwMFVV//MUxAsAAANIAAAAAFVVVVVVVVVVVVVV//MUxBYAAANIAAAAAFVVVVVVVVVVVVVV//MUxCEAAANIAAAAAFVVVVVVVVVVVVVV//MUxCwAAANIAAAAAFVVVVVVVVVVVVVV//MUxDcAAANIAAAAAFVVVVVVVVVVVVVV//MUxEIAAANIAAAAAFVVVVVVVVVVVVVV'; voiceAudio.play().then(() => voiceAudio.pause()).catch(() => { /* noop */ }); } catch (e) { /* noop */ }
+  document.removeEventListener('pointerdown', unlockVoice, true);
+}, true);
 document.addEventListener('pointerdown', function unlock() {
   ac();
   if (hasTTS) { try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } catch (e) { /* noop */ } }
@@ -1672,7 +1714,9 @@ function showParent() {
         <div class="row">이름 <input id="pn" type="text" value="${esc(S.childName)}" style="width:110px"> 영어 <input id="pne" type="text" value="${esc(S.childNameEn)}" style="width:120px"></div>
         <div class="row">하루 학습 시간 <select id="tl">${[0, 10, 15, 20, 30, 40, 60].map(m => `<option value="${m}" ${m === S.settings.timeLimit ? 'selected' : ''}>${m ? m + '분' : '제한 없음'}</option>`).join('')}</select></div>
         <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '조금 천천히'], [.9, '보통 (추천)'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-        <div class="row">목소리 <select id="vc" style="max-width:240px"><option value="">자동 선택 (가장 자연스러운 음성)</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${voiceScore(v) >= 80 ? '⭐ ' : ''}${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
+        <div class="row">제니 목소리 <select id="jv">${[['heart', '🐰 Heart (녹음 · 따뜻한 목소리)'], ['bella', '🐰 Bella (녹음 · 밝은 목소리)'], ['device', '📱 기기 음성']].map(([v, n]) => `<option value="${v}" ${v === (S.settings.jennyVoice || 'heart') ? 'selected' : ''}>${n}</option>`).join('')}</select> <button class="btn ghost" data-a="testJ">🔊 듣기</button></div>
+        <p class="desc" style="margin:-4px 0 10px">녹음 목소리는 그림책·단어·대화처럼 정해진 말에 쓰이고, 아이 이름·우리 단어처럼 바뀌는 말은 아래 기기 음성으로 읽어요.</p>
+        <div class="row">기기 음성 <select id="vc" style="max-width:240px"><option value="">자동 선택 (가장 자연스러운 음성)</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${voiceScore(v) >= 80 ? '⭐ ' : ''}${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
         <details class="desc" style="margin:-2px 0 10px"><summary style="cursor:pointer">🎙️ 제니 목소리를 더 자연스럽게 하려면</summary>
           <p style="margin:6px 0"><b>아이패드</b>: 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 영어 → <b>Ava, Zoe 또는 Samantha</b>를 눌러 <b>"프리미엄"이나 "향상된" 음성</b>을 내려받은 뒤, 여기서 ⭐ 표시 음성을 고르세요.<br>
           <b>갤럭시</b>: 설정 → 일반 → 텍스트 음성 변환 → Google 음성 엔진 → 음성 데이터 설치 → 영어(미국)에서 마음에 드는 음성을 받으세요.</p></details>
@@ -1729,9 +1773,10 @@ function showParent() {
     back: goBack,
     home: () => showHome(),
     setDay: () => { S.dayIndex = +$('#daySel').value; S.lastLessonIdx = null; today().lesson = false; save(); toast('진도를 변경했어요'); showParent(); },
+    testJ: () => { const old = S.settings.jennyVoice; S.settings.jennyVoice = $('#jv').value; say("Hi! I'm Jenny, the white rabbit!").then(() => { S.settings.jennyVoice = old; }); },
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
     saveSet: () => {
-      Object.assign(S.settings, { timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, ytPremium: $('#ytPremium').checked, oneLessonPerDay: $('#oneDay').checked });
+      Object.assign(S.settings, { jennyVoice: $('#jv').value, timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, ytPremium: $('#ytPremium').checked, oneLessonPerDay: $('#oneDay').checked });
       S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); S.settingsAt = Date.now(); save(); toast('저장했어요');
     },
     addW: async () => {
