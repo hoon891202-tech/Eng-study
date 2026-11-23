@@ -16,7 +16,7 @@ function defaultState() {
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
     history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {}, settingsAt: 0, listsAt: 0, sync: null,
-    settings: { timeLimit: 20, rate: 0.8, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, ytPremium: false, schedule },
+    settings: { timeLimit: 20, rate: 0.9, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, ytPremium: false, schedule },
   };
 }
 function load() {
@@ -90,14 +90,24 @@ let voices = [];
 function loadVoices() { voices = hasTTS ? speechSynthesis.getVoices() : []; }
 if (hasTTS) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 function enVoices() { return voices.filter(v => /^en[-_]/i.test(v.lang)); }
+// 자연스러운 음성 점수: 프리미엄·향상된(내려받은 고품질) > 신경망(Natural/Neural/Online) > 이름 있는 기본 음성
+function voiceScore(v) {
+  const n = v.name; let sc = 0;
+  if (/premium|프리미엄/i.test(n)) sc += 100;
+  if (/enhanced|향상된|고품질/i.test(n)) sc += 80;
+  if (/natural|neural|online/i.test(n)) sc += 70;
+  if (/\b(Ava|Zoe|Allison|Evan|Nathan|Noelle|Susan|Samantha|Joelle|Nicky|Aria|Jenny|Michelle|Emma)\b/.test(n)) sc += 30;
+  if (/Google US English/.test(n)) sc += 40;
+  if (v.localService === false) sc += 10;   // 크롬·안드로이드의 온라인 음성이 대체로 더 자연스러움
+  if (/en[-_]US/i.test(v.lang)) sc += 15; else if (/en[-_](GB|AU)/i.test(v.lang)) sc += 8;
+  if (/Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Deranged|Good News|Hysterical|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Ralph|Kathy|Grandpa|Grandma|Rocko|Shelley|Flo|Eddy|Reed|Sandy/.test(n)) sc -= 200; // 장난감 같은 효과 음성 제외
+  return sc;
+}
+function rankedEnVoices() { return enVoices().slice().sort((a, b) => voiceScore(b) - voiceScore(a)); }
 function pickVoice(lang) {
   if (lang.startsWith('en')) {
     if (S.settings.voiceURI) { const v = voices.find(v => v.voiceURI === S.settings.voiceURI); if (v) return v; }
-    const en = enVoices();
-    for (const p of ['Samantha', 'Karen', 'Tessa', 'Moira', 'Google US English', 'Aria', 'Jenny']) {
-      const v = en.find(v => v.name.includes(p)); if (v) return v;
-    }
-    return en.find(v => /en[-_]US/i.test(v.lang)) || en[0];
+    return rankedEnVoices()[0];
   }
   return voices.find(v => v.lang.toLowerCase().startsWith(lang.slice(0, 2)));
 }
@@ -113,7 +123,7 @@ function say(text, opt = {}) {
     u.lang = lang;
     const v = pickVoice(lang); if (v) u.voice = v;
     u.rate = (opt.rate || 1) * (lang.startsWith('en') ? S.settings.rate : 1);
-    u.pitch = opt.pitch || 1.15;
+    u.pitch = opt.pitch || 1.03;
     let finished = false;
     const done = () => { if (finished) return; finished = true; if (tok === speakTok) document.body.classList.remove('talking'); res(); };
     u.onend = done; u.onerror = done;
@@ -1080,14 +1090,45 @@ function showPack(p) {
     list: startMyWords,
   });
 }
+// 복습: 무엇을 복습하는지 먼저 보여주고 고르기
+let reviewMode = 'mix', reviewSeed = 0;
+function everyWord() {   // 주제 단어 + 알파벳 단어 + 그림책 속 단어 (그림 중복 제거)
+  const m = new Map();
+  for (const w of allWords()) m.set(w.w, w);
+  for (const b of STORIES) for (const w of storyWords(b)) if (!m.has(w.w) && w.w.length > 2) m.set(w.w, w);
+  return [...m.values()];
+}
+function reviewWords(mode) {
+  const learned = learnedWords();
+  const recentDays = CURRICULUM.slice(Math.max(0, S.dayIndex - 3), S.dayIndex).filter(l => l.type !== 'sentence');
+  const recent = [...new Map(recentDays.flatMap(lessonWords).map(w => [w.w, w])).values()];
+  const weak = [...new Map(learned.concat(everyWord()).map(w => [w.w, w])).values()].filter(x => { const st = S.wordStats[x.w]; return st && st.s >= 2 && st.c / st.s < .7; });
+  const fresh = everyWord().filter(x => !learned.some(l => l.w === x.w));
+  const pools = { recent, weak, mix: learned.length >= 12 ? learned : learned.concat(pickWeighted(fresh, 12 - learned.length + 4)), fresh };
+  let pool = pools[mode];
+  if (!pool || pool.length < 4) pool = pools.mix.length >= 4 ? pools.mix : everyWord();
+  const uniq = []; for (const w of shuffle(pool)) if (!uniq.some(u => u.e === w.e && !w.img)) uniq.push(w);
+  return { words: pickWeighted(uniq, Math.min(8, uniq.length)), counts: { recent: recent.length, weak: weak.length, learned: learned.length, fresh: fresh.length } };
+}
 function startReview() {
-  const pool = learnedWords();
-  const words = pickWeighted(pool.length >= 4 ? pool : allWords(), 5);
-  runSteps([
-    ctx => stepWords(words, ctx),
-    ctx => findGame({ targets: words, pool, rounds: 4, ctx }),
-    ctx => memoryGame(words.slice(0, 3), ctx),
-  ], () => { markAct('review'); rewardScreen({ mini: true, stars: 3 }); });
+  const { words, counts } = reviewWords(reviewMode);
+  const MODES = [['recent', '🕘', '최근 배운 단어', counts.recent], ['weak', '💪', '어려웠던 단어', counts.weak], ['mix', '🌈', '골고루 섞기', counts.learned], ['fresh', '🆕', '새 단어 미리 만나기', counts.fresh]];
+  render(topbar() + jennySays("Let's review!", `오늘 복습할 단어 ${words.length}개예요 · 배운 단어 ${counts.learned}개`, 100) + `
+    <div class="cat-tabs">${MODES.map(([id, ic, ko, n]) => `<button class="cat-tab ${reviewMode === id ? 'on' : ''}" data-a="mode" data-m="${id}" ${n || id === 'mix' ? '' : 'disabled'}>${ic} ${ko}<small>${n}</small></button>`).join('')}</div>
+    <div class="word-row review-preview">${words.map((w, i) => `<button class="card mini-word" data-a="say" data-i="${i}"><div class="pic">${pic(w)}</div><div class="w">${esc(w.w)}</div>${S.settings.showKorean && w.ko ? `<div class="ko">${esc(w.ko)}</div>` : ''}</button>`).join('')}</div>
+    <div class="nav-row"><button class="btn ghost" data-a="shuffle" style="font-size:20px;padding:14px 22px">🔀 다른 단어</button>
+      <button class="btn" data-a="go" style="font-size:24px;padding:16px 34px">▶️ 복습 시작</button></div>`, {
+    ...baseHandlers(),
+    mode: (b) => { reviewMode = b.dataset.m; sfx.tap(); startReview(); },
+    shuffle: () => { sfx.flip(); startReview(); },
+    say: (b) => { const w = words[+b.dataset.i]; sfx.tap(); say(w.w); },
+    go: () => runSteps([
+      ctx => stepWords(words, ctx),
+      ctx => findGame({ targets: words, pool: everyWord(), rounds: Math.min(5, words.length), ctx }),
+      ctx => memoryGame(words.slice(0, words.length >= 8 ? 4 : 3), ctx),
+    ], () => { markAct('review'); rewardScreen({ mini: true, stars: 3 }); }),
+  });
+  say("Let's review!");
 }
 
 /* ---------------- 보상 + 동화/영상 추천 ---------------- */
@@ -1451,9 +1492,10 @@ function waitThen(cont) {
 /* ---------------- 제니와 대화하기 (말하기 마을) ---------------- */
 function showTalkMenu() {
   const keys = Object.keys(TALKS);
-  render(topbar() + jennySays("Let's talk!", '제니가 물어보면 그림을 눌러 대답해요', 130) + `
-    <div class="book-grid">${keys.map(k => `<button class="book" data-a="t" data-k="${k}"><span class="cover" style="font-size:80px">${SENTENCES[k].icon}</span>
-      <span class="bt en">${esc(SENTENCES[k].title)}</span><span class="bk">${esc(SENTENCES[k].ko)}</span></button>`).join('')}</div>`, {
+  const meta = (k) => SENTENCES[k] || TALKS[k];
+  render(topbar() + jennySays("Let's talk!", `대화 ${keys.length}가지! 제니가 물어보면 그림을 눌러 대답해요`, 120) + `
+    <div class="book-grid">${keys.map(k => `<button class="book" data-a="t" data-k="${k}">${SENTENCES[k] ? '' : '<span class="badge ok">NEW</span>'}<span class="cover" style="font-size:72px">${meta(k).icon}</span>
+      <span class="bt en">${esc(meta(k).title)}</span><span class="bk">${esc(meta(k).ko)}</span></button>`).join('')}</div>`, {
     ...baseHandlers(),
     t: (b) => talkGame(b.dataset.k, null, () => { markAct('talk'); rewardScreen({ mini: true, stars: 2 }); }),
   });
@@ -1464,7 +1506,7 @@ function talkGame(key, ctx, onDone) {
   const top = () => (ctx ? topbar(ctx) : topbar());
   // 열린 질문: 정답 없음 — 아이가 고른 것을 제니가 문장으로 말해줌
   if (T.open) {
-    const items = SENTENCES[T.open].items.map(W);
+    const items = (T.items || SENTENCES[T.open].items).map(x => ({ ...W(x), reply: x[4] }));
     let round = 0;
     const ask = () => {
       if (round >= 2) { markAct('talk'); return done(); }
@@ -1478,7 +1520,7 @@ function talkGame(key, ctx, onDone) {
         pick: async (b) => {
           if (picked) return; picked = true;
           const c = items[+b.dataset.i]; b.classList.add('right'); sfx.ok();
-          if (await talk(c.w, 300, T.reply)) waitThen(() => sayItStep(c, ctx, ask, 'Your turn!'));
+          if (await talk(c.w, 300, c.reply || T.reply)) waitThen(() => sayItStep(c, ctx, ask, 'Your turn!'));
         },
       });
       talk(q);
@@ -1600,7 +1642,7 @@ function showParent() {
   const cal = Array.from({ length: 28 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - 27 + i); const h = S.history[dkey(d)]; return `<div class="${h && h.lesson ? 'on' : ''}" title="${dkey(d)}">${h && h.lesson ? '🥕' : d.getDate()}</div>`; }).join('');
   const minsWeek = Array.from({ length: 7 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - i); return (S.history[dkey(d)] || {}).sec || 0; }).reduce((a, b) => a + b, 0);
   const cur = lessonAt(S.dayIndex), cl = lessonLabel(cur);
-  const enV = enVoices();
+  const enV = rankedEnVoices();
   const sch = S.settings.schedule;
 
   render(`
@@ -1629,8 +1671,11 @@ function showParent() {
       <div class="panel"><h3>⚙️ 학습 설정</h3>
         <div class="row">이름 <input id="pn" type="text" value="${esc(S.childName)}" style="width:110px"> 영어 <input id="pne" type="text" value="${esc(S.childNameEn)}" style="width:120px"></div>
         <div class="row">하루 학습 시간 <select id="tl">${[0, 10, 15, 20, 30, 40, 60].map(m => `<option value="${m}" ${m === S.settings.timeLimit ? 'selected' : ''}>${m ? m + '분' : '제한 없음'}</option>`).join('')}</select></div>
-        <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '보통 (추천)'], [.9, '조금 빠르게'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
-        <div class="row">목소리 <select id="vc" style="max-width:240px"><option value="">자동 선택</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
+        <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '조금 천천히'], [.9, '보통 (추천)'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        <div class="row">목소리 <select id="vc" style="max-width:240px"><option value="">자동 선택 (가장 자연스러운 음성)</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${voiceScore(v) >= 80 ? '⭐ ' : ''}${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
+        <details class="desc" style="margin:-2px 0 10px"><summary style="cursor:pointer">🎙️ 제니 목소리를 더 자연스럽게 하려면</summary>
+          <p style="margin:6px 0"><b>아이패드</b>: 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 영어 → <b>Ava, Zoe 또는 Samantha</b>를 눌러 <b>"프리미엄"이나 "향상된" 음성</b>을 내려받은 뒤, 여기서 ⭐ 표시 음성을 고르세요.<br>
+          <b>갤럭시</b>: 설정 → 일반 → 텍스트 음성 변환 → Google 음성 엔진 → 음성 데이터 설치 → 영어(미국)에서 마음에 드는 음성을 받으세요.</p></details>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="sk" ${S.settings.showKorean ? 'checked' : ''}> 한국어 뜻 함께 보여주기</label></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="ytPremium" ${S.settings.ytPremium ? 'checked' : ''}> 유튜브 프리미엄 사용 중 (영상에 "유튜브 앱에서 보기" 버튼 · 로그인 정보로 재생)</label></div>
         <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="autoNext" ${S.settings.autoNext ? 'checked' : ''}> 이야기·대화 자동으로 넘기기 (끄면 아이가 ➡️를 눌러야 넘어가요)</label></div>
@@ -1791,7 +1836,7 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.ser
 showLibrary = trackScreen(showLibrary); showListening = trackScreen(showListening); showTalkMenu = trackScreen(showTalkMenu);
 showGames = trackScreen(showGames); startMyWords = trackScreen(startMyWords); showPack = trackScreen(showPack);
 showABC = trackScreen(showABC); letterDetail = trackScreen(letterDetail); showTraceMenu = trackScreen(showTraceMenu);
-showLetterVideos = trackScreen(showLetterVideos); singABC = trackScreen(singABC); showVideos = trackScreen(showVideos); showStickers = trackScreen(showStickers);
+showLetterVideos = trackScreen(showLetterVideos); startReview = trackScreen(startReview); singABC = trackScreen(singABC); showVideos = trackScreen(showVideos); showStickers = trackScreen(showStickers);
 showBoard = trackScreen(showBoard); showParent = trackScreen(showParent);
 readBook = trackScreen(readBook, (a) => !!(a[1] && a[1].onEnd)); // 수업·듣기 시간 속 이야기는 단계로 취급
 { const home0 = showHome; showHome = function (...a) { navStack.length = 0; navBack = false; curScreen = { fn: showHome, args: [], tok: 0 }; const r = home0.apply(this, a); curScreen.tok = navTok; return r; }; }

@@ -631,3 +631,9 @@ body.parent-mode .panel input[type=checkbox] { accent-color: #5B4BDB; }
 .video-card .vbadge.k-pinkfong { background: #FF5FA2; color: #fff; }
 .video-card .vbadge.k-storytime { background: #FFC23D; }
 .video-card .vlen { position: absolute; right: 8px; bottom: 8px; background: rgba(0, 0, 0, .72); color: #fff; font-family: var(--en); font-size: 13px; font-weight: 500; padding: 2px 7px; border-radius: 6px; }
+
+/* 복습 미리보기 */
+.review-preview { justify-content: center; }
+.review-preview .mini-word { width: 150px; }
+.cat-tab[disabled] { opacity: .4; }
+@media (max-width: 560px) { .review-preview .mini-word { width: 28vw; padding: 10px 4px; } .review-preview .pic { font-size: 48px; } }

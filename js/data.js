@@ -796,6 +796,41 @@ const TALKS = {
   can:   { q: 'What can you do?', ko: '너는 뭘 할 수 있어?', open: 'can', reply: 'Wow! Show me!' },
 };
 
+// 대화 더하기 (v0.13) — 메뉴 표시용 icon·title·ko, 열린 질문은 items: [문장, 그림, 한국어, 단어, (제니 맞춤 대답)]
+Object.assign(TALKS, {
+  sound: { icon: '🐮', title: 'Who says moo?', ko: '누가 이렇게 울까?', rounds: [
+    ['🔊', 'Moo, moo! Who says moo?', '음메~ 누가 이렇게 울까?', [['🐮', 'The cow!', 1], ['🐷', 'The pig!', 0], ['🦆', 'The duck!', 0]], 'The cow says moo!'],
+    ['🔊', 'Quack, quack! Who says quack?', '꽥꽥~ 누구일까?', [['🐶', 'The dog!', 0], ['🦆', 'The duck!', 1], ['🐑', 'The sheep!', 0]], 'The duck says quack!'],
+    ['🔊', 'Woof, woof! Who says woof?', '멍멍~ 누구일까?', [['🐱', 'The cat!', 0], ['🐮', 'The cow!', 0], ['🐶', 'The dog!', 1]], 'The dog says woof!'],
+    ['🔊', 'Meow! Who says meow?', '야옹~ 누구일까?', [['🐱', 'The cat!', 1], ['🐷', 'The pig!', 0], ['🐔', 'The chicken!', 0]], 'The cat says meow!']] },
+  weather: { icon: '🌦️', title: "How's the weather?", ko: '오늘 날씨 어때?', rounds: [
+    ['☀️😎', "How's the weather today?", '오늘 날씨 어때?', [['☀️', 'Sunny!', 1], ['🌧️', 'Rainy!', 0], ['❄️', 'Snowy!', 0]], "It's sunny!"],
+    ['☂️💦', "How's the weather today?", '오늘 날씨 어때?', [['❄️', 'Snowy!', 0], ['🌧️', 'Rainy!', 1], ['☀️', 'Sunny!', 0]], "It's rainy!"],
+    ['⛄🧣', "How's the weather today?", '오늘 날씨 어때?', [['☀️', 'Sunny!', 0], ['❄️', 'Snowy!', 1], ['🌧️', 'Rainy!', 0]], "It's snowy!"]] },
+  body: { icon: '👃', title: 'Where is your nose?', ko: '코는 어디 있어?', rounds: [
+    ['🧒', 'Where is your nose? Touch your nose!', '코는 어디 있어? 코를 만져봐!', [['👃', 'Yes!', 1], ['👂', '', 0], ['👀', '', 0]], 'Here is my nose!'],
+    ['🧒', 'Where are your eyes? Touch your eyes!', '눈은 어디 있어? 눈을 만져봐!', [['👂', '', 0], ['👀', 'Yes!', 1], ['👄', '', 0]], 'Here are my eyes!'],
+    ['🧒', 'Where are your ears? Touch your ears!', '귀는 어디 있어? 귀를 만져봐!', [['👂', 'Yes!', 1], ['👃', '', 0], ['🙌', '', 0]], 'Here are my ears!'],
+    ['🧒', 'Where is your mouth? Touch your mouth!', '입은 어디 있어? 입을 만져봐!', [['👀', '', 0], ['🙌', '', 0], ['👄', 'Yes!', 1]], 'Here is my mouth!']] },
+  eat: { icon: '🍽️', title: 'What do you want to eat?', ko: '뭐 먹고 싶어?', open: true, reply: 'Yummy! Here you are!', items: [
+    ['I want an apple.', '🍎', '사과 먹고 싶어요.', 'apple', 'Crunch, crunch! Here is your apple!'], ['I want a banana.', '🍌', '바나나 먹고 싶어요.', 'banana'],
+    ['I want rice.', '🍚', '밥 먹고 싶어요.', 'rice', 'Good choice! Rice makes you strong!'], ['I want pizza.', '🍕', '피자 먹고 싶어요.', 'pizza', 'Wow! Pizza party!']] },
+  favcolor: { icon: '🖍️', title: 'What color do you like?', ko: '무슨 색이 좋아?', open: true, reply: 'What a nice color!', items: [
+    ['I like red.', '🔴', '빨간색이 좋아요.', 'red', 'Red like an apple!'], ['I like blue.', '🔵', '파란색이 좋아요.', 'blue', 'Blue like the sky!'],
+    ['I like yellow.', '🟡', '노란색이 좋아요.', 'yellow', 'Yellow like the sun!'], ['I like pink.', '🩷', '분홍색이 좋아요.', 'pink', 'Me too! My ears are pink!']] },
+  animal: { icon: '🐾', title: 'What animal do you like?', ko: '어떤 동물이 좋아?', open: true, reply: 'Me too!', items: [
+    ['I like dogs.', '🐶', '강아지가 좋아요.', 'dog', 'Woof, woof! Dogs are fun!'], ['I like cats.', '🐱', '고양이가 좋아요.', 'cat', 'Meow! Cats are so soft!'],
+    ['I like rabbits.', '🐰', '토끼가 좋아요.', 'rabbit', "Yay! I'm a rabbit too!"], ['I like lions.', '🦁', '사자가 좋아요.', 'lion', 'Roar! Lions are strong!']] },
+  go: { icon: '🗺️', title: 'Where do you want to go?', ko: '어디 가고 싶어?', open: true, reply: "Yay! Let's go!", items: [
+    ["Let's go to the park!", '🛝', '공원에 가요!', 'park', 'Whee! Down the slide!'], ["Let's go to the zoo!", '🦁', '동물원에 가요!', 'zoo', "Let's say hello to the animals!"],
+    ["Let's go to the beach!", '🏖️', '바닷가에 가요!', 'beach', 'Splash, splash!'], ["Let's go to Grandma's house!", '👵', '할머니 댁에 가요!', 'grandma', 'Grandma will be so happy!']] },
+  hungry: { icon: '😋', title: 'Are you hungry?', ko: '배고프니?', open: true, reply: 'Okay!', items: [
+    ["Yes, I'm hungry!", '😋', '네, 배고파요!', 'yes', "Let's eat something yummy!"], ["No, I'm full.", '🙅', '아니요, 배불러요.', 'no', "Okay! Let's play then!"]] },
+  doing: { icon: '🏃', title: 'What are you doing?', ko: '뭐 하고 있어?', open: true, reply: 'That looks fun!', items: [
+    ["I'm jumping!", '🦘', '점프하고 있어요!', 'jump', 'Jump, jump, jump!'], ["I'm dancing!", '💃', '춤추고 있어요!', 'dance', "Let's dance together!"],
+    ["I'm eating!", '🍽️', '먹고 있어요!', 'eat', 'Yum, yum!'], ["I'm sleeping.", '😴', '자고 있어요.', 'sleep', 'Shh! Sweet dreams!']] },
+});
+
 /* ---------- 커리큘럼: 듣기 → 말하기 → 읽기 (Day 0부터 계속 늘어남) ---------- */
 // 아이가 모국어를 배우듯: 일상 이야기를 충분히 듣고(귀) → 짧은 대화로 말하고(입) → 마지막에 글자(눈)
 function buildCurriculum() {
