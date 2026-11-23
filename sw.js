@@ -1,16 +1,22 @@
 // 오프라인 지원: 앱 파일을 캐시하고, 온라인이면 백그라운드에서 최신 버전으로 갱신
-const CACHE = 'jenny-english-v14';
+// (업데이트 때 지우는 건 앱 자기 캐시뿐 — 제니 목소리 모델(transformers-cache)·만든 목소리(jenny-local-voice-v1)는 유지)
+const CACHE = 'jenny-english-v15';
 const SHELL = ['./', 'index.html', 'css/style.css', 'js/data.js', 'js/icons.js', 'js/sync.js', 'js/app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('jenny-english-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET') return;
+  // 기기 안에서 만든 제니 목소리 (앱이 Cache Storage에 저장)
+  if (url.origin === location.origin && url.pathname.includes('/lv/')) {
+    e.respondWith(caches.open('jenny-local-voice-v1').then(c => c.match(e.request)).then(r => r || new Response('', { status: 404 })));
+    return;
+  }
   const cacheable = url.origin === location.origin || url.host.endsWith('fonts.googleapis.com') || url.host.endsWith('fonts.gstatic.com');
   if (!cacheable) return;
   e.respondWith(caches.open(CACHE).then(async (c) => {

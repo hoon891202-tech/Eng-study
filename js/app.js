@@ -121,9 +121,89 @@ voiceAudio.preload = 'auto';
 fetch('audio/manifest.json').then(r => r.ok ? r.json() : null).then(m => { VOICE_MAP = m; }).catch(() => { /* 기기 음성만 사용 */ });
 function voiceClip(text) {
   const v = S.settings.jennyVoice || 'heart';
-  if (v === 'device' || !VOICE_MAP) return null;
-  const h = VOICE_MAP[String(text).trim().replace(/\s+/g, ' ').toLowerCase()];
-  return h ? `audio/${v}/${h}.mp3` : null;
+  if (v === 'device') return null;
+  const n = String(text).trim().replace(/\s+/g, ' ').toLowerCase();
+  const h = VOICE_MAP && VOICE_MAP[n];
+  if (h) return `audio/${v}/${h}.mp3`;
+  return localClip(v, n);
+}
+/* ---- 이름·우리 단어도 제니 목소리로: 기기 안에서 Kokoro로 만들어 저장 (부모님 메뉴에서 켜기) ----
+   만든 말은 Cache Storage 'jenny-local-voice-v1'에 lv/<voice>/<hash>.wav 로 저장 → sw.js가 꺼내 줌 */
+const LV_CACHE = 'jenny-local-voice-v1';
+const LV = { worker: null, state: 'off', pct: 0, have: new Set(), queue: [], busy: false, made: 0, err: '' };
+const lvHash = (n) => { let h = 2166136261; for (let i = 0; i < n.length; i++) { h ^= n.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(16) + n.length.toString(16); };
+const lvPath = (voice, n) => `lv/${voice}/${lvHash(n)}.wav`;
+function localClip(voice, n) {
+  if (!S.settings.localVoice) return null;
+  if (LV.have.has(voice + '|' + n)) return lvPath(voice, n);
+  lvEnqueue(n); return null;
+}
+function lvEnqueue(n) {
+  if (!n || n.length > 220 || /[가-힣]/.test(n)) return;
+  for (const voice of ['heart', 'bella']) {
+    const k = voice + '|' + n;
+    if (!LV.have.has(k) && !LV.queue.includes(k)) LV.queue.push(k);
+  }
+  try { localStorage.setItem('jenny-lv-queue', JSON.stringify(LV.queue.slice(-400))); } catch (e) { /* noop */ }
+  lvPump();
+}
+// 아이 이름이 들어간 말·우리 단어는 미리 만들어 두기
+function lvSeed() {
+  const n = childNameEn();
+  [`Hi, ${n}!`, `You did it today, ${n}!`, `Great job, ${n}! You did it!`, `Great listening, ${n}!`, `Welcome to English Land, ${n}!`,
+    `Great job today, ${n}! Time to rest. See you tomorrow! Bye-bye!`, `Hi, ${n}! I am Jenny, the white rabbit. Let's learn English together!`]
+    .forEach(t => lvEnqueue(t.toLowerCase()));
+  for (const w of S.customWords) [w.w, `Can you find ${w.w}?`, `That's ${w.w}.`].forEach(t => lvEnqueue(t.trim().replace(/\s+/g, ' ').toLowerCase()));
+}
+async function lvStart() {
+  if (!S.settings.localVoice || LV.worker || !('caches' in window) || typeof Worker === 'undefined') return;
+  try {
+    const c = await caches.open(LV_CACHE);
+    const keys = await c.keys();
+    const idx = JSON.parse(localStorage.getItem('jenny-lv-index') || '{}');
+    const paths = new Set(keys.map(r => new URL(r.url).pathname.split('/lv/')[1]));
+    for (const [k, path] of Object.entries(idx)) if (paths.has(path)) LV.have.add(k);
+    LV.queue = (JSON.parse(localStorage.getItem('jenny-lv-queue') || '[]')).filter(k => !LV.have.has(k));
+  } catch (e) { /* noop */ }
+  LV.state = 'loading'; LV.pct = 0; lvUpdateUI();
+  try { LV.worker = new Worker('js/tts-worker.js', { type: 'module' }); } catch (e) { LV.state = 'error'; LV.err = '이 기기에서는 지원되지 않아요'; return lvUpdateUI(); }
+  const files = {};
+  LV.worker.onmessage = async (e) => {
+    const m = e.data;
+    if (m.type === 'progress') {
+      files[m.file] = [m.loaded || 0, m.total || 0];
+      const sum = Object.values(files).reduce((a, [l, t]) => [a[0] + l, a[1] + t], [0, 0]);
+      LV.pct = sum[1] ? Math.round(sum[0] / sum[1] * 100) : 0; lvUpdateUI();
+    } else if (m.type === 'ready') { LV.state = 'ready'; lvSeed(); lvUpdateUI(); lvPump(); }
+    else if (m.type === 'done') {
+      const [voice, n] = m.id.split(/\|(.*)/s);
+      try {
+        const c = await caches.open(LV_CACHE);
+        await c.put(new Request(lvPath(voice, n)), new Response(m.blob, { headers: { 'Content-Type': 'audio/wav' } }));
+        LV.have.add(m.id); LV.made++;
+        const idx = JSON.parse(localStorage.getItem('jenny-lv-index') || '{}'); idx[m.id] = lvPath(voice, n).slice(3);
+        localStorage.setItem('jenny-lv-index', JSON.stringify(idx));
+        localStorage.setItem('jenny-lv-queue', JSON.stringify(LV.queue));
+      } catch (err) { LV.err = '저장 공간이 부족해요'; }
+      LV.busy = false; lvUpdateUI(); setTimeout(lvPump, 300);
+    } else if (m.type === 'error') {
+      if (LV.state === 'loading') { LV.state = 'error'; LV.err = '모델을 받지 못했어요 (인터넷 확인)'; }
+      LV.busy = false; lvUpdateUI(); setTimeout(lvPump, 2000);
+    }
+  };
+  LV.worker.postMessage({ type: 'load' });
+}
+// 아이가 듣는 중엔 쉬고, 조용할 때 하나씩 만들기
+function lvPump() {
+  if (LV.state !== 'ready' || LV.busy || !LV.queue.length || document.visibilityState !== 'visible') return;
+  if (document.body.classList.contains('talking')) { setTimeout(lvPump, 1500); return; }
+  const k = LV.queue.shift(); if (LV.have.has(k)) return lvPump();
+  const [voice, n] = k.split(/\|(.*)/s);
+  LV.busy = true; LV.worker.postMessage({ type: 'gen', id: k, voice: 'af_' + voice, text: n });
+}
+function lvUpdateUI() {
+  const el = document.getElementById('lvStatus'); if (!el) return;
+  el.textContent = LV.state === 'loading' ? `제니 목소리 모델 받는 중… ${LV.pct}%` : LV.state === 'ready' ? `✅ 준비 완료 · 만든 말 ${LV.have.size}개 · 만들 말 ${LV.queue.length}개` : LV.state === 'error' ? '⚠️ ' + LV.err : '';
 }
 function say(text, opt = {}) {
   const lang0 = opt.lang || 'en-US';
@@ -1716,6 +1796,8 @@ function showParent() {
         <div class="row">말하기 속도 <select id="rt">${[[.6, '아주 천천히'], [.7, '천천히'], [.8, '조금 천천히'], [.9, '보통 (추천)'], [1, '원어민 속도']].map(([v, n]) => `<option value="${v}" ${v === S.settings.rate ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
         <div class="row">제니 목소리 <select id="jv">${[['heart', '🐰 Heart (녹음 · 따뜻한 목소리)'], ['bella', '🐰 Bella (녹음 · 밝은 목소리)'], ['device', '📱 기기 음성']].map(([v, n]) => `<option value="${v}" ${v === (S.settings.jennyVoice || 'heart') ? 'selected' : ''}>${n}</option>`).join('')}</select> <button class="btn ghost" data-a="testJ">🔊 듣기</button></div>
         <p class="desc" style="margin:-4px 0 10px">녹음 목소리는 그림책·단어·대화처럼 정해진 말에 쓰이고, 아이 이름·우리 단어처럼 바뀌는 말은 아래 기기 음성으로 읽어요.</p>
+        <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="lv" ${S.settings.localVoice ? 'checked' : ''}> 이름·우리 단어도 제니 목소리로 (기기 안에서 만들기 · 처음 한 번 약 90MB, 와이파이 권장)</label></div>
+        <p class="desc" id="lvStatus" style="margin:-4px 0 10px"></p>
         <div class="row">기기 음성 <select id="vc" style="max-width:240px"><option value="">자동 선택 (가장 자연스러운 음성)</option>${enV.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === S.settings.voiceURI ? 'selected' : ''}>${voiceScore(v) >= 80 ? '⭐ ' : ''}${esc(v.name)} (${esc(v.lang)})</option>`).join('')}</select> <button class="btn ghost" data-a="test">🔊 듣기</button></div>
         <details class="desc" style="margin:-2px 0 10px"><summary style="cursor:pointer">🎙️ 제니 목소리를 더 자연스럽게 하려면</summary>
           <p style="margin:6px 0"><b>아이패드</b>: 설정 → 손쉬운 사용 → 읽기 및 말하기 → 음성 → 영어 → <b>Ava, Zoe 또는 Samantha</b>를 눌러 <b>"프리미엄"이나 "향상된" 음성</b>을 내려받은 뒤, 여기서 ⭐ 표시 음성을 고르세요.<br>
@@ -1776,8 +1858,9 @@ function showParent() {
     testJ: () => { const old = S.settings.jennyVoice; S.settings.jennyVoice = $('#jv').value; say("Hi! I'm Jenny, the white rabbit!").then(() => { S.settings.jennyVoice = old; }); },
     test: () => { S.settings.voiceURI = $('#vc').value; S.settings.rate = +$('#rt').value; say(`Hi ${$('#pne').value || 'friend'}! I am Jenny. A, B, C. Apple!`); },
     saveSet: () => {
-      Object.assign(S.settings, { jennyVoice: $('#jv').value, timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, ytPremium: $('#ytPremium').checked, oneLessonPerDay: $('#oneDay').checked });
-      S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); S.settingsAt = Date.now(); save(); toast('저장했어요');
+      Object.assign(S.settings, { localVoice: $('#lv').checked, jennyVoice: $('#jv').value, timeLimit: +$('#tl').value, rate: +$('#rt').value, voiceURI: $('#vc').value, showKorean: $('#sk').checked, useMic: $('#mic').checked, autoNext: $('#autoNext').checked, ytPremium: $('#ytPremium').checked, oneLessonPerDay: $('#oneDay').checked });
+      S.childName = $('#pn').value.trim() || S.childName; S.childNameEn = $('#pne').value.trim(); S.settingsAt = Date.now(); save();
+      if (S.settings.localVoice) { lvStart(); if (LV.state === 'ready') lvSeed(); } toast('저장했어요');
     },
     addW: async () => {
       const w = $('#cw').value.trim(), ko = $('#ck').value.trim(), e = $('#ce').value.trim();
@@ -1785,7 +1868,7 @@ function showParent() {
       const f = $('#cp').files[0];
       let img = null;
       if (f) { try { img = await readImage(f); } catch (err) { return toast('사진을 불러오지 못했어요'); } }
-      S.customWords.push({ w, ko, e: e || '💝', img }); S.listsAt = Date.now(); save(); say(w); showParent();
+      S.customWords.push({ w, ko, e: e || '💝', img }); S.listsAt = Date.now(); save(); if (LV.state === 'ready') lvSeed(); say(w); showParent();
     },
     bulkAdd: () => {
       const added = parseWordLines($('#bulk').value).filter(x => !S.customWords.some(y => y.w.toLowerCase() === x.w.toLowerCase()));
@@ -1825,6 +1908,7 @@ function showParent() {
     syncCopy: () => { const c = S.sync.code; try { navigator.clipboard.writeText(c).then(() => toast('복사했어요: ' + c), () => toast(c)); } catch (e) { toast(c); } },
     reset: () => { if (confirm('모든 학습 기록을 지울까요? 되돌릴 수 없어요.')) { S = defaultState(); save(); showHome(); } },
   });
+  lvUpdateUI();
   document.body.classList.add('parent-mode');
   app.querySelectorAll('[data-sch]').forEach(c => c.addEventListener('change', () => { S.settings.schedule[c.dataset.sch][+c.dataset.d] = c.checked ? 1 : 0; S.settingsAt = Date.now(); save(); }));
   $('#cp').addEventListener('change', (e) => { $('#cpn').textContent = e.target.files[0] ? '사진 선택됨 ✓' : ''; });
@@ -1886,5 +1970,7 @@ showBoard = trackScreen(showBoard); showParent = trackScreen(showParent);
 readBook = trackScreen(readBook, (a) => !!(a[1] && a[1].onEnd)); // 수업·듣기 시간 속 이야기는 단계로 취급
 { const home0 = showHome; showHome = function (...a) { navStack.length = 0; navBack = false; curScreen = { fn: showHome, args: [], tok: 0 }; const r = home0.apply(this, a); curScreen.tok = navTok; return r; }; }
 function onSyncChanged() { if (onHome) showHome(); }
+if (S.settings.localVoice) setTimeout(lvStart, 3000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') lvPump(); });
 showHome();
 if (S.sync && S.sync.code) syncNow().then(r => { if (r.changed) onSyncChanged(); });
