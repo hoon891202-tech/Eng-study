@@ -1714,7 +1714,7 @@ function showBoard() {
   const avail = [...new Set([...BOARD_BASICS, ...S.stickers])];
   render(topbar() + `
     <div class="board-wrap">
-      <div class="board bg-${B.bg}" id="board">${B.items.map((it, k) => `<div class="placed" data-k="${k}" style="left:${it.x}%;top:${it.y}%">${it.s}</div>`).join('')}
+      <div class="st-board bg-${B.bg}" id="board">${B.items.map((it, k) => `<div class="placed" data-k="${k}" style="left:${it.x}%;top:${it.y}%">${it.s}</div>`).join('')}
         <div class="trash" id="trash">🗑️</div></div>
       <div class="board-tools">${BOARD_BGS.map(([id, ic, en]) => `<button class="bg-btn ${B.bg === id ? 'on' : ''}" data-a="bg" data-bg="${id}" aria-label="${en}">${ic}</button>`).join('')}
         <button class="bg-btn" data-a="clear" aria-label="모두 지우기">🧽</button></div>
