@@ -119,7 +119,7 @@
 ## 🔄 진행 중
 - [x] **제니 목소리 2단계 — 녹음 음성(Kokoro, Apache-2.0) (v0.16)**: Heart·Bella 각 2,501문장 녹음(오류 0, 약 36MB, mp3 ~39kbps) → `audio/manifest.json`(소문자 정규화 문장→sha1 12자) + `audio/heart|bella/*.mp3`. 실제 흐름 측정: 말 42개 중 40개 녹음 재생(나머지는 이름·숫자 들어간 말 → 기기 음성 또는 기기 안 Kokoro). 기본 속도 '보통'=녹음보다 10% 천천히. 녹음 도구: scratchpad/kokoro (extract.js → texts.json, generate.py <voice>, qa.py, publish.py) — 새 문장 추가 시 다시 돌려야 함
 - [x] **이름·우리 단어도 제니 목소리로 (v0.15)**: 부모님 메뉴 옵션(기본 꺼짐). 켜면 `js/tts-worker.js`(module worker)가 jsDelivr의 kokoro-js + Hugging Face 모델(q8)을 한 번 받아 저장, 아이 이름 인사·우리 단어·기기 음성으로 읽힌 말을 조용할 때 하나씩 만들어 `jenny-local-voice-v1` 캐시에 `lv/<voice>/<hash>.wav`(16비트)로 저장 → `voiceClip`이 녹음 다음 순서로 사용. 작업 서버 테스트: 모델 12초, 말 하나 약 8초, 84KB. *아이패드·폴드 실제 속도·메모리 확인 필요*
-- [ ] **실제 사진 단어 카드 — 천천히 채우는 중**: 앱 준비 완료(v0.17) — `images/words/credits.json`에 있는 단어는 단어 카드에 📷 버튼(누르면 실제 사진 ↔ 그림, "Look!" + 단어), 부모님 메뉴에 사진 출처(저작자·라이선스) 자동 표시. 받기: `python3 tools/photos.py [개수=12]` — 위키미디어 공용 PD·CC0·CC BY/BY-SA만, 4초 간격, 429 받으면 즉시 멈추고 다음에 이어서. 2026-11-23 현재 작업 서버 IP가 429로 막혀 0장 → 몇 시간 간격으로 재시도 예약. 사진이 생기면 커밋·SW 버전 올리기
+- [ ] **실제 사진 단어 카드 — 천천히 채우는 중**: 앱 준비 완료(v0.17) — `images/words/credits.json`에 있는 단어는 단어 카드에 📷 버튼(누르면 실제 사진 ↔ 그림, "Look!" + 단어), 부모님 메뉴에 사진 출처(저작자·라이선스) 자동 표시. 받기: `python3 tools/photos.py [개수=12]` — 위키미디어 공용 PD·CC0·CC BY/BY-SA만, 4초 간격, 429 받으면 즉시 멈추고 다음에 이어서. 위키미디어 4회 연속 429(11-23~24, 6시간 간격) → 작업 서버에서는 계속 막힘. **Pixabay 무료 API 키 필요** (사용자 답변 대기, 키는 request_credential로). 사진이 생기면 커밋·SW 버전 올리기
 
 ## ⏭️ 다음 할 일 (우선순위 순)
 0. [x] GitHub Pages 동작 확인 — https://hoon891202-tech.github.io/Eng-study/ (2026-11-21 접속 확인)
