@@ -10,6 +10,8 @@ const DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 
 /* ---------------- 저장소 ---------------- */
 const KEY = 'jenny-english-v1';
+// 앱 버전 — 부모님 메뉴 맨 아래에 표시(실기기 업데이트 확인용). 배포할 때 sw.js의 CACHE 번호와 함께 올린다.
+const APP_VER = 'v0.20';
 function defaultState() {
   const schedule = {};
   for (const [k, v] of Object.entries(ACTIVITIES)) schedule[k] = [...v.days];
@@ -56,7 +58,9 @@ function today() {
   return S.history[k];
 }
 const W = (a) => ({ w: a[0], e: a[1], ko: a[2], key: a[3] });
-const pic = (x) => x.img ? `<img src="${x.img}" alt="">` : esc(x.e || '⭐');
+// 사진 주소는 이 앱이 만든 형식(기기에서 줄인 사진 data:image/…, 앱 안 images/…)만 화면에 넣는다 (동기화로 받은 값 대비)
+const safeImg = (u) => typeof u === 'string' && /^(data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$|images\/[\w./-]+$)/.test(u) && !u.includes('..') ? u : null;
+const pic = (x) => safeImg(x.img) ? `<img src="${esc(x.img)}" alt="">` : esc(x.e || '⭐');
 const picStyle = (x, base) => { const n = x.img ? 1 : [...(x.e || '')].filter(c => /\p{Extended_Pictographic}/u.test(c)).length || 1; return n > 1 ? `style="font-size:calc(${base} / ${Math.min(n, 4) * 0.62})"` : ''; };
 const childName = () => S.childName || '친구';
 const childNameEn = () => S.childNameEn || 'friend';
@@ -1866,6 +1870,7 @@ function showParent() {
       <p class="desc">학습 기록은 이 아이패드에만 저장돼요. 가끔 백업해 두면 안전해요.</p>
       <div class="row"><button class="btn" data-a="export">백업 파일 저장</button><label class="btn ghost">백업 불러오기<input id="imp" type="file" accept="application/json,.json" hidden></label>
       <button class="btn danger" data-a="reset">전체 초기화</button></div></div>
+    <p class="desc app-ver" style="text-align:center;font-size:13px;opacity:.6;margin:12px 0 0">제니의 영어나라 ${APP_VER}</p>
     <div style="height:20px"></div>`, {
     back: goBack,
     home: () => showHome(),
