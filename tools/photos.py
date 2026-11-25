@@ -1,8 +1,19 @@
 """실제 사진 단어 카드 받기 — 위키미디어 공용 (PD·CC0·CC BY/BY-SA만), 천천히 조금씩.
-사용: python3 tools/photos.py [한 번에 받을 개수=12]
+사용: python tools/photos.py [한 번에 받을 개수=12]   (맥·리눅스는 python3)
+필요: Pillow (pip install Pillow)
 429(요청 과다)를 받으면 바로 멈추고 다음에 이어서 받는다. 결과: images/words/<단어>.jpg + credits.json"""
 import json, re, os, io, sys, time, urllib.parse, urllib.request, urllib.error, html
-from PIL import Image
+for _s in (sys.stdout, sys.stderr):  # 윈도우(cp949)에서 화면에 못 쓰는 글자가 있어도 멈추지 않게
+    try: _s.reconfigure(errors='replace')
+    except Exception: pass
+if len(sys.argv) > 1 and sys.argv[1] in ('-h', '--help', '/?'):
+    print(__doc__); sys.exit(0)
+if len(sys.argv) > 1 and not sys.argv[1].isdigit():
+    sys.exit('사용법: python tools/photos.py [한 번에 받을 개수, 예: 12]')
+try:
+    from PIL import Image
+except ImportError:
+    sys.exit('Pillow가 없어요. 먼저 실행: python -m pip install Pillow')
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'images', 'words'); os.makedirs(OUT, exist_ok=True)
 UA = {'User-Agent': 'JennyEnglishKidsApp/1.0 (educational, non-commercial)'}
 class Limited(Exception): pass
@@ -54,7 +65,7 @@ def pick(q):
             return {'file': pg['title'], 'thumb': ii['thumburl'], 'page': ii.get('descriptionurl'), 'license': lic, 'artist': artist}
     return None
 LIMIT = int(sys.argv[1]) if len(sys.argv) > 1 else 12
-credits = json.load(open(f'{OUT}/credits.json')) if os.path.exists(f'{OUT}/credits.json') else {}
+credits = json.load(open(f'{OUT}/credits.json', encoding='utf-8')) if os.path.exists(f'{OUT}/credits.json') else {}
 done = 0
 for word, q in Q.items():
     word = word.strip()
@@ -69,10 +80,10 @@ for word, q in Q.items():
         im.save(f'{OUT}/{slug}.jpg', quality=78, optimize=True)
         credits[word] = {**c, 'img': f'images/words/{slug}.jpg'}
         print('ok', word, c['license'], c['file'][:60], flush=True)
-        json.dump(credits, open(f'{OUT}/credits.json', 'w'), ensure_ascii=False, indent=1)
+        json.dump(credits, open(f'{OUT}/credits.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     except Limited:
         print('429 — 위키미디어가 잠시 막음, 다음에 이어서'); break
     except Exception as e:
         print('ERR', word, e)
-json.dump(credits, open(f'{OUT}/credits.json', 'w'), ensure_ascii=False, indent=1)
+json.dump(credits, open(f'{OUT}/credits.json', 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('total', len(credits), 'of', len(set(k.strip() for k in Q)))
