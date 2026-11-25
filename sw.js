@@ -1,6 +1,6 @@
 // 오프라인 지원: 앱 파일을 캐시하고, 온라인이면 백그라운드에서 최신 버전으로 갱신
 // (업데이트 때 지우는 건 앱 자기 캐시뿐 — 제니 목소리 모델(transformers-cache)·만든 목소리(jenny-local-voice-v1)·녹음 목소리(jenny-audio-v1)는 유지)
-const CACHE = 'jenny-english-v19';
+const CACHE = 'jenny-english-v20';
 // 녹음 목소리 mp3(audio/heart|bella/*.mp3, 약 36MB)는 미리 받지 않고, 한 번 재생한 것만 AUDIO 캐시에 남긴다.
 // 파일 이름이 문장 내용의 해시라 내용이 바뀌면 이름도 바뀜 → 앱 버전을 올려도 지우지 않는다.
 const AUDIO = 'jenny-audio-v1';
@@ -8,8 +8,9 @@ const SHELL = ['./', 'index.html', 'css/style.css', 'js/data.js', 'js/icons.js',
   'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
   'audio/manifest.json', 'images/words/credits.json'];
 
+// 미리 저장은 브라우저 HTTP 캐시를 건너뛰고(cache: 'reload') 서버에서 새로 받음 → 배포 직후 옛 파일이 새 캐시에 섞이지 않게
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('jenny-english-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
