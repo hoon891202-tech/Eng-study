@@ -50,6 +50,28 @@ function mergeState(a, b) {
     customWords: ls.customWords || [], favVideos: ls.favVideos || [], listsAt: ls.listsAt || 0,
   };
 }
+/* ---------- "사진은 이 기기에만" (부모님 메뉴 옵션, 기본 꺼짐) ----------
+   켜면 우리 단어 사진(img)은 Firebase로 올리지 않는다. 단어 글자·뜻·이모지와 다른 기록은 그대로 동기화.
+   - 올릴 때: img를 비우고 imgElsewhere 표시 → 다른 기기에선 이모지(기본 그림)가 보임
+   - 합칠 때: 사진이 빠진 단어는 이 기기(또는 받아온 기록)에 있는 같은 단어 사진을 다시 붙임
+     → 켜고 꺼도 이 기기 사진은 사라지지 않고, 끄면 다음 동기화부터 다른 기기에도 사진이 다시 보임 */
+const photosLocalOnly = (st) => !!(st && st.settings && st.settings.photosLocalOnly);
+function stripPhotos(st) {
+  if (!st || !Array.isArray(st.customWords)) return st;
+  return { ...st, customWords: st.customWords.map(w => (w && w.img ? { ...w, img: null, imgElsewhere: true } : w)) };
+}
+function keepLocalPhotos(st, ...sources) {
+  if (!st || !Array.isArray(st.customWords)) return st;
+  const mine = new Map();
+  for (const src of sources) for (const w of (src && Array.isArray(src.customWords) ? src.customWords : []))
+    if (w && w.img && w.w) { const k = String(w.w).trim().toLowerCase(); if (!mine.has(k)) mine.set(k, w.img); }
+  if (!mine.size) return st;
+  return { ...st, customWords: st.customWords.map(w => {
+    const img = w && !w.img && w.w ? mine.get(String(w.w).trim().toLowerCase()) : null;
+    if (!img) return w;
+    const c = { ...w, img }; delete c.imgElsewhere; return c;
+  }) };
+}
 function newFamilyCode() {
   const r = new Uint32Array(10); crypto.getRandomValues(r);
   const s = [...r].map(x => CODE_CHARS[x % CODE_CHARS.length]).join('');
@@ -81,7 +103,7 @@ function syncErrorText(e) {
   if (/permission-denied|insufficient permissions/i.test(c)) return 'Firebase 콘솔에서 Firestore 규칙을 설정해 주세요';
   if (/admin-restricted|operation-not-allowed/i.test(c)) return 'Firebase에서 익명 로그인을 켜 주세요';
   if (/not-found/i.test(c)) return '이 가족 코드를 찾을 수 없어요';
-  if (/too-big/i.test(c)) return '기록이 너무 커요. 우리 단어 사진을 몇 개 지워 주세요';
+  if (/too-big/i.test(c)) return '기록이 너무 커요. 우리 단어 사진을 몇 개 지우거나 "사진은 이 기기에만"을 켜 주세요';
   if (/unavailable|network|offline|Failed to fetch|import/i.test(c)) return '인터넷 연결을 확인해 주세요';
   return '동기화 오류: ' + c;
 }
@@ -101,14 +123,16 @@ function syncNow() {
       await fs.runTransaction(db, async (tx) => {
         const snap = await tx.get(ref);
         const remote = snap.exists() ? JSON.parse(snap.data().state) : null;
-        merged = mergeState(syncStrip(S), remote);
-        const str = JSON.stringify(merged);
+        merged = keepLocalPhotos(mergeState(syncStrip(S), remote), S, remote);
+        // 합친 설정(가장 최근에 고친 기기 기준)에서 "사진은 이 기기에만"이 켜져 있으면 사진을 빼고 올림
+        const upload = photosLocalOnly(merged) ? stripPhotos(merged) : merged;
+        const str = JSON.stringify(upload);
         if (str.length > 900000) throw new Error('too-big');
         if (!remote || str !== JSON.stringify(remote)) tx.set(ref, { state: str, v: 1, updatedAt: fs.serverTimestamp() });
       });
       if (!S.sync || S.sync.code !== code) return { ok: false, err: 'cancelled' };
       const before = JSON.stringify([S.dayIndex, S.stars, S.stickers.length, S.lastLessonIdx]);
-      S = { ...mergeState(syncStrip(S), merged), sync: { code, lastAt: Date.now(), err: null } };
+      S = { ...keepLocalPhotos(mergeState(syncStrip(S), merged), S, merged), sync: { code, lastAt: Date.now(), err: null } };
       saveLocalOnly();
       return { ok: true, changed: before !== JSON.stringify([S.dayIndex, S.stars, S.stickers.length, S.lastLessonIdx]) };
     } catch (e) {
