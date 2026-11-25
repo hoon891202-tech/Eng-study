@@ -16,6 +16,7 @@ function defaultState() {
   return {
     childName: '', childNameEn: '', stars: 0, dayIndex: 0, lastLessonIdx: null, curVer: CURRICULUM_VERSION,
     history: {}, stickers: [], customWords: [], favVideos: [], wordStats: {}, booksRead: {}, settingsAt: 0, listsAt: 0, sync: null,
+    photosLocalOnly: false, photosLocalOnlyAt: 0, // "사진은 이 기기에만" — 설정 묶음과 따로 자체 시각으로 동기화 (sync.js)
     settings: { timeLimit: 20, rate: 0.9, voiceURI: '', showKorean: true, oneLessonPerDay: true, useMic: true, autoNext: false, ytPremium: false, jennyVoice: 'heart', photosLocalOnly: false, schedule },
   };
 }
@@ -24,7 +25,8 @@ function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) {
-      const d = JSON.parse(raw);
+      // 옛 기록(settings.photosLocalOnly만 있음)은 최상위 photosLocalOnly(+시각)로 옮겨 옴 (sync.js liftPhotoOpt)
+      const d = typeof liftPhotoOpt === 'function' ? liftPhotoOpt(JSON.parse(raw)) : JSON.parse(raw);
       const st = d.settings || {};
       // 커리큘럼 순서가 바뀌면(듣기→말하기→읽기) 진도·요일표만 새로 시작, 별·스티커·기록은 유지
       if (d.curVer !== CURRICULUM_VERSION) { d.dayIndex = 0; d.lastLessonIdx = null; d.curVer = CURRICULUM_VERSION; st.schedule = {}; }
@@ -1783,7 +1785,7 @@ function showParent() {
     <div class="panel"><h3>☁️ 기기 간 기록 공유</h3>
       <p class="desc">아이패드와 폴드8에 같은 <b>가족 코드</b>를 넣으면 진도·별·스티커가 함께 저장돼요. 두 기기에서 따로 공부해도 합쳐져요.</p>
       <p class="desc">🔒 기록 공유를 켜면 <b>아이 이름과 우리 단어(사진 포함)</b>, 학습 기록이 가족 기록 저장소(Google Firebase)에 저장돼요. 가족 코드를 아는 기기만 볼 수 있으니 코드는 가족끼리만 나눠 주세요.</p>
-      <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="photoLocal" ${S.settings.photosLocalOnly ? 'checked' : ''}> 📷 사진은 이 기기에만 저장 (동기화 안 함)</label></div>
+      <div class="row"><label class="row" style="margin:0"><input type="checkbox" id="photoLocal" ${S.photosLocalOnly ? 'checked' : ''}> 📷 사진은 이 기기에만 저장 (동기화 안 함)</label></div>
       <p class="desc" style="margin:-4px 0 10px">켜면 우리 단어 사진은 저장소에 올리지 않아요. 단어 글자·학습 기록은 계속 공유되고, 다른 기기에는 사진 대신 기본 그림이 보여요. (연결된 기기 모두 같은 설정이 돼요)</p>
       ${S.sync && S.sync.code ? `<div class="row"><span class="famcode">${esc(S.sync.code)}</span><button class="btn ghost" data-a="syncCopy">코드 복사</button></div>
         <p class="desc" style="margin:4px 0 10px">${S.sync.err ? '⚠️ ' + esc(S.sync.err) : S.sync.lastAt ? '✅ 마지막 동기화: ' + new Date(S.sync.lastAt).toLocaleString('ko-KR') : '아직 동기화 전'}</p>
@@ -1925,7 +1927,8 @@ function showParent() {
   document.body.classList.add('parent-mode');
   app.querySelectorAll('[data-sch]').forEach(c => c.addEventListener('change', () => { S.settings.schedule[c.dataset.sch][+c.dataset.d] = c.checked ? 1 : 0; S.settingsAt = Date.now(); save(); }));
   $('#photoLocal').addEventListener('change', (e) => {
-    S.settings.photosLocalOnly = e.target.checked; S.settingsAt = Date.now(); save();
+    // 옵션만의 시각으로 기록(settingsAt은 건드리지 않음) → 다른 기기의 설정 저장과 섞여도 마지막에 고친 값 유지
+    S.photosLocalOnly = e.target.checked; S.photosLocalOnlyAt = Date.now(); S.settings.photosLocalOnly = e.target.checked; save();
     toast(e.target.checked ? '사진은 이 기기에만 저장해요' : '사진도 다른 기기와 함께 공유해요');
     if (S.sync && S.sync.code) syncNow(); // 바로 반영 (켜면 저장소에 올라가 있던 사진도 빠짐)
   });

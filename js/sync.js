@@ -2,7 +2,8 @@
    기기 간 기록 공유 (Firebase Firestore + 익명 로그인 + 가족 코드)
    - 같은 가족 코드를 넣은 기기(아이패드·폴드8)가 같은 기록을 씀
    - 두 기기에서 따로 공부해도 합쳐짐: 진도·별은 큰 쪽, 스티커·기록은 합집합,
-     설정·우리 단어·즐겨찾기는 마지막에 고친 기기 기준
+     설정·우리 단어·즐겨찾기는 마지막에 고친 기기 기준,
+     "사진은 이 기기에만" 옵션은 설정 묶음과 따로 자체 시각(photosLocalOnlyAt)으로 마지막에 고친 기기 기준
    - Firestore 규칙은 PROGRESS.md / 부모님 메뉴 안내 참고 (목록 조회 불가, 코드를 알아야 읽기·쓰기)
    ========================================================= */
 'use strict';
@@ -27,6 +28,7 @@ function mergeState(a, b) {
   if (!a) return b;
   const newer = (k) => ((a[k] || 0) >= (b[k] || 0) ? a : b);
   const st = newer('settingsAt'), ls = newer('listsAt');
+  const po = mergePhotoOpt(photoOpt(a), photoOpt(b));
   const prog = (a.dayIndex || 0) >= (b.dayIndex || 0) ? a : b;
   const words = {};
   for (const src of [a.wordStats || {}, b.wordStats || {}]) for (const [w, v] of Object.entries(src)) {
@@ -46,7 +48,10 @@ function mergeState(a, b) {
     stickers: [...new Set([...(a.stickers || []), ...(b.stickers || [])])],
     booksRead: maxMap(a.booksRead, b.booksRead),
     wordStats: words, history: hist,
-    childName: st.childName, childNameEn: st.childNameEn, settings: st.settings, settingsAt: st.settingsAt || 0,
+    childName: st.childName, childNameEn: st.childNameEn, settingsAt: st.settingsAt || 0,
+    // 옵션은 settings 묶음과 따로 합친다(M1). settings 안 값도 같은 값으로 맞춰 둠 → 옛 v0.19 기기가 읽는 자리
+    settings: st.settings ? { ...st.settings, photosLocalOnly: po.v } : st.settings,
+    photosLocalOnly: po.v, photosLocalOnlyAt: po.at,
     customWords: ls.customWords || [], favVideos: ls.favVideos || [], listsAt: ls.listsAt || 0,
   };
 }
@@ -54,8 +59,26 @@ function mergeState(a, b) {
    켜면 우리 단어 사진(img)은 Firebase로 올리지 않는다. 단어 글자·뜻·이모지와 다른 기록은 그대로 동기화.
    - 올릴 때: img를 비우고 imgElsewhere 표시 → 다른 기기에선 이모지(기본 그림)가 보임
    - 합칠 때: 사진이 빠진 단어는 이 기기(또는 받아온 기록)에 있는 같은 단어 사진을 다시 붙임
-     → 켜고 꺼도 이 기기 사진은 사라지지 않고, 끄면 다음 동기화부터 다른 기기에도 사진이 다시 보임 */
-const photosLocalOnly = (st) => !!(st && st.settings && st.settings.photosLocalOnly);
+     → 켜고 꺼도 이 기기 사진은 사라지지 않고, 끄면 다음 동기화부터 다른 기기에도 사진이 다시 보임
+   - 옵션 값은 최상위 photosLocalOnly + photosLocalOnlyAt(켜고 끈 시각). 다른 설정 저장(settingsAt)과 무관하게
+     옵션을 마지막으로 고친 기기 기준 → 다른 기기에서 학습 설정을 저장해도 옵션이 꺼지지 않음
+   - 옛 기록(v0.19: settings.photosLocalOnly만 있음)은 읽을 때 옮겨 옴: 켜짐이면 그때의 settingsAt을 시각으로,
+     꺼짐이면 시각 0(아직 고른 적 없음으로 봄 → 다른 기기의 '켜짐'을 덮지 않음, 사진을 덜 올리는 쪽) */
+function photoOpt(st) {
+  if (!st) return { v: false, at: 0 };
+  if (typeof st.photosLocalOnly === 'boolean') return { v: st.photosLocalOnly, at: +st.photosLocalOnlyAt || 0 };
+  const v = !!(st.settings && st.settings.photosLocalOnly);
+  return { v, at: v ? (+st.settingsAt || 0) : 0 };
+}
+// 시각이 큰 쪽, 같으면 켜짐 우선(사진을 덜 올리는 쪽)
+function mergePhotoOpt(p, q) { return p.at > q.at ? p : q.at > p.at ? q : { v: p.v || q.v, at: p.at }; }
+// 저장된 기록(localStorage·백업)을 새 형식으로: 최상위 옵션이 없으면 settings 안 값을 옮겨 옴
+function liftPhotoOpt(d) {
+  if (!d || typeof d !== 'object' || typeof d.photosLocalOnly === 'boolean') return d;
+  const p = photoOpt(d);
+  return { ...d, photosLocalOnly: p.v, photosLocalOnlyAt: p.at };
+}
+const photosLocalOnly = (st) => photoOpt(st).v;
 function stripPhotos(st) {
   if (!st || !Array.isArray(st.customWords)) return st;
   return { ...st, customWords: st.customWords.map(w => (w && w.img ? { ...w, img: null, imgElsewhere: true } : w)) };
