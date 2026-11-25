@@ -11,7 +11,7 @@ const DAYS_KO = ['일', '월', '화', '수', '목', '금', '토'];
 /* ---------------- 저장소 ---------------- */
 const KEY = 'jenny-english-v1';
 // 앱 버전 — 부모님 메뉴 맨 아래에 표시(실기기 업데이트 확인용). 배포할 때 sw.js의 CACHE 번호와 함께 올린다.
-const APP_VER = 'v0.20';
+const APP_VER = 'v0.21';
 function defaultState() {
   const schedule = {};
   for (const [k, v] of Object.entries(ACTIVITIES)) schedule[k] = [...v.days];
@@ -1863,7 +1863,7 @@ function showParent() {
       <b>유튜브 키즈를 쓸 때</b>: 부모 설정(자물쇠) → 아이 프로필 → 콘텐츠 설정을 <b>"승인된 콘텐츠만"</b>으로 바꾸고 위 채널만 허용하면 다른 영상으로 빠지지 않아요. 좋은 에피소드를 찾으면 아래 '즐겨찾기 영상'에 링크를 넣어 주세요.</p></div>
 
     ${Object.keys(PHOTOS).length ? `<div class="panel"><h3>📷 실제 사진 출처</h3>
-      <p class="desc">단어 카드의 📷 버튼을 누르면 실제 사진이 나와요. 사진은 위키미디어 공용의 자유 이용 사진(퍼블릭 도메인·CC0·CC BY)이고, 저작자 표시는 아래와 같아요.</p>
+      <p class="desc">단어 카드의 📷 버튼을 누르면 실제 사진이 나와요. 사진은 위키미디어 공용의 자유 이용 사진(퍼블릭 도메인·CC0·CC BY·CC BY-SA)을 작게 줄여 쓴 것이고, 저작자 표시는 아래와 같아요. 각 사진의 라이선스 전문은 '원본' 페이지에서 볼 수 있어요.</p>
       <details><summary class="desc" style="cursor:pointer">사진 ${Object.keys(PHOTOS).length}장 출처 보기</summary><ul class="desc credits">${Object.entries(PHOTOS).map(([w, c]) => `<li><b>${esc(w)}</b> — ${esc(c.artist || '작자 미상')} · ${esc(c.license)} · <a href="${esc(c.page || '#')}" target="_blank" rel="noopener">원본</a></li>`).join('')}</ul></details></div>` : ''}
 
     <div class="panel"><h3>💾 데이터</h3>
