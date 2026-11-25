@@ -1,1 +1,514 @@
-{}
+{
+ "banana": {
+  "file": "File:Cavendish banana from Maracaibo.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Cavendish_banana_from_Maracaibo.jpg/500px-Cavendish_banana_from_Maracaibo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Cavendish_banana_from_Maracaibo.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Wilfredor",
+  "img": "images/words/banana.jpg"
+ },
+ "bear": {
+  "file": "File:Brown bear (Ursus arctos arctos) running.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2a/Brown_bear_%28Ursus_arctos_arctos%29_running.jpg/500px-Brown_bear_%28Ursus_arctos_arctos%29_running.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Brown_bear_(Ursus_arctos_arctos)_running.jpg",
+  "license": "CC BY 2.5",
+  "artist": "Malene Thyssen",
+  "img": "images/words/bear.jpg"
+ },
+ "cat": {
+  "file": "File:Felis catus-cat on snow.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b6/Felis_catus-cat_on_snow.jpg/500px-Felis_catus-cat_on_snow.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Felis_catus-cat_on_snow.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Von.grzanka",
+  "img": "images/words/cat.jpg"
+ },
+ "car": {
+  "file": "File:Red car toy.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/66/Red_car_toy.jpg/500px-Red_car_toy.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Red_car_toy.jpg",
+  "license": "CC0",
+  "artist": "Jebulon",
+  "img": "images/words/car.jpg"
+ },
+ "cake": {
+  "file": "File:My birthday cake! Oops there's only half left!.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/79/My_birthday_cake%21_Oops_there%27s_only_half_left%21.jpg/500px-My_birthday_cake%21_Oops_there%27s_only_half_left%21.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:My_birthday_cake!_Oops_there%27s_only_half_left!.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Anna.Massini",
+  "img": "images/words/cake.jpg"
+ },
+ "dog": {
+  "file": "File:White dog sleeping on the floor with puppies after nursing in Don Det Laos.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9d/White_dog_sleeping_on_the_floor_with_puppies_after_nursing_in_Don_Det_Laos.jpg/500px-White_dog_sleeping_on_the_floor_with_puppies_after_nursing_in_Don_Det_Laos.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:White_dog_sleeping_on_the_floor_with_puppies_after_nursing_in_Don_Det_Laos.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Basile Morin",
+  "img": "images/words/dog.jpg"
+ },
+ "duck": {
+  "file": "File:Anas platyrhynchos male female.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Anas_platyrhynchos_male_female.jpg/500px-Anas_platyrhynchos_male_female.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Anas_platyrhynchos_male_female.jpg",
+  "license": "CC BY-SA 2.5",
+  "artist": "Richard Bartz",
+  "img": "images/words/duck.jpg"
+ },
+ "donut": {
+  "file": "File:Pink Doughnut.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/Pink_Doughnut.jpg/500px-Pink_Doughnut.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Pink_Doughnut.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Jubair Bin Iqbal",
+  "img": "images/words/donut.jpg"
+ },
+ "elephant": {
+  "file": "File:African bush elephants (Loxodonta africana) female with six-week-old baby.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/African_bush_elephants_%28Loxodonta_africana%29_female_with_six-week-old_baby.jpg/500px-African_bush_elephants_%28Loxodonta_africana%29_female_with_six-week-old_baby.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:African_bush_elephants_(Loxodonta_africana)_female_with_six-week-old_baby.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/elephant.jpg"
+ },
+ "frog": {
+  "file": "File:Green frog (Pelophylax esculentus complex) Danube delta.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/74/Green_frog_%28Pelophylax_esculentus_complex%29_Danube_delta.jpg/500px-Green_frog_%28Pelophylax_esculentus_complex%29_Danube_delta.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Green_frog_(Pelophylax_esculentus_complex)_Danube_delta.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/frog.jpg"
+ },
+ "flower": {
+  "file": "File:Blossom of Mirabelle plum.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Blossom_of_Mirabelle_plum.jpg/500px-Blossom_of_Mirabelle_plum.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Blossom_of_Mirabelle_plum.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Trachemys",
+  "img": "images/words/flower.jpg"
+ },
+ "goat": {
+  "file": "File:Capra aegagrus hircus in isla Margarita.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9c/Capra_aegagrus_hircus_in_isla_Margarita.jpg/500px-Capra_aegagrus_hircus_in_isla_Margarita.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Capra_aegagrus_hircus_in_isla_Margarita.jpg",
+  "license": "CC0",
+  "artist": "Wilfredor",
+  "img": "images/words/goat.jpg"
+ },
+ "grapes": {
+  "file": "File:Grapes, Dry Creek Valley-7705.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Grapes%2C_Dry_Creek_Valley-7705.jpg/500px-Grapes%2C_Dry_Creek_Valley-7705.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Grapes,_Dry_Creek_Valley-7705.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Frank Schulenburg",
+  "img": "images/words/grapes.jpg"
+ },
+ "gift": {
+  "file": "File:Brown gift box with red ribbon and bow.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/Brown_gift_box_with_red_ribbon_and_bow.jpg/500px-Brown_gift_box_with_red_ribbon_and_bow.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Brown_gift_box_with_red_ribbon_and_bow.jpg",
+  "license": "CC BY 2.0",
+  "artist": "Shixart1985",
+  "img": "images/words/gift.jpg"
+ },
+ "horse": {
+  "file": "File:Horse December 2014-1.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/Horse_December_2014-1.jpg/500px-Horse_December_2014-1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Horse_December_2014-1.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Alvesgaspar",
+  "img": "images/words/horse.jpg"
+ },
+ "house": {
+  "file": "File:Ljungris July 2013.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Ljungris_July_2013.jpg/500px-Ljungris_July_2013.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Ljungris_July_2013.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Arild Vågen",
+  "img": "images/words/house.jpg"
+ },
+ "island": {
+  "file": "File:Havelock Island, Mangrove tree on the beach, Andaman Islands.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/51/Havelock_Island%2C_Mangrove_tree_on_the_beach%2C_Andaman_Islands.jpg/500px-Havelock_Island%2C_Mangrove_tree_on_the_beach%2C_Andaman_Islands.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Havelock_Island,_Mangrove_tree_on_the_beach,_Andaman_Islands.jpg",
+  "license": "CC BY 4.0",
+  "artist": "Vyacheslav Argenberg",
+  "img": "images/words/island.jpg"
+ },
+ "juice": {
+  "file": "File:Orange juice 1 edit1.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Orange_juice_1_edit1.jpg/500px-Orange_juice_1_edit1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Orange_juice_1_edit1.jpg",
+  "license": "Public domain",
+  "artist": "United States Department of Agriculture (edited by Arad)",
+  "img": "images/words/juice.jpg"
+ },
+ "jellyfish": {
+  "file": "File:Jellyfish from Corpus Christi.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Jellyfish_from_Corpus_Christi.jpg/500px-Jellyfish_from_Corpus_Christi.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Jellyfish_from_Corpus_Christi.jpg",
+  "license": "CC0",
+  "artist": "Miguel Angel Omaña Rojas",
+  "img": "images/words/jellyfish.jpg"
+ },
+ "koala": {
+  "file": "File:Koala in Zoo Duisburg.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Koala_in_Zoo_Duisburg.jpg/500px-Koala_in_Zoo_Duisburg.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Koala_in_Zoo_Duisburg.jpg",
+  "license": "CC BY 3.0",
+  "artist": "Till Niermann",
+  "img": "images/words/koala.jpg"
+ },
+ "key": {
+  "file": "File:KEY,,.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0b/KEY%2C%2C.jpg/500px-KEY%2C%2C.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:KEY,,.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Kaviyadharshini Selvakumar",
+  "img": "images/words/key.jpg"
+ },
+ "lion": {
+  "file": "File:Lion (Panthera leo) male 6y.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Lion_%28Panthera_leo%29_male_6y.jpg/500px-Lion_%28Panthera_leo%29_male_6y.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Lion_(Panthera_leo)_male_6y.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/lion.jpg"
+ },
+ "lemon": {
+  "file": "File:Lemon - whole and split.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Lemon_-_whole_and_split.jpg/500px-Lemon_-_whole_and_split.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Lemon_-_whole_and_split.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Ivar Leidus",
+  "img": "images/words/lemon.jpg"
+ },
+ "monkey": {
+  "file": "File:Golden monkey (Cercopithecus kandti) eating.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Golden_monkey_%28Cercopithecus_kandti%29_eating.jpg/500px-Golden_monkey_%28Cercopithecus_kandti%29_eating.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Golden_monkey_(Cercopithecus_kandti)_eating.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/monkey.jpg"
+ },
+ "moon": {
+  "file": "File:Full Moon Luc Viatour.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/dd/Full_Moon_Luc_Viatour.jpg/500px-Full_Moon_Luc_Viatour.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Full_Moon_Luc_Viatour.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Luc Viatour",
+  "img": "images/words/moon.jpg"
+ },
+ "nest": {
+  "file": "File:Bird-nest-with-eggs-Sitia-Crete.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9b/Bird-nest-with-eggs-Sitia-Crete.jpg/500px-Bird-nest-with-eggs-Sitia-Crete.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Bird-nest-with-eggs-Sitia-Crete.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Petro Stelte",
+  "img": "images/words/nest.jpg"
+ },
+ "nut": {
+  "file": "File:Peanuts (Arachis hypogaea) - in shell, shell cracked open, shelled, peeled.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Peanuts_%28Arachis_hypogaea%29_-_in_shell%2C_shell_cracked_open%2C_shelled%2C_peeled.jpg/500px-Peanuts_%28Arachis_hypogaea%29_-_in_shell%2C_shell_cracked_open%2C_shelled%2C_peeled.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Peanuts_(Arachis_hypogaea)_-_in_shell,_shell_cracked_open,_shelled,_peeled.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Ivar Leidus",
+  "img": "images/words/nut.jpg"
+ },
+ "orange": {
+  "file": "File:Orange-Fruit-Pieces.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c4/Orange-Fruit-Pieces.jpg/500px-Orange-Fruit-Pieces.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Orange-Fruit-Pieces.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Evan-Amos",
+  "img": "images/words/orange.jpg"
+ },
+ "owl": {
+  "file": "File:Eurasian eagle-owl (44088).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Eurasian_eagle-owl_%2844088%29.jpg/500px-Eurasian_eagle-owl_%2844088%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Eurasian_eagle-owl_(44088).jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Rhododendrites",
+  "img": "images/words/owl.jpg"
+ },
+ "pig": {
+  "file": "File:Pot-bellied pigs in Lisbon Zoo 2008.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Pot-bellied_pigs_in_Lisbon_Zoo_2008.jpg/500px-Pot-bellied_pigs_in_Lisbon_Zoo_2008.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Pot-bellied_pigs_in_Lisbon_Zoo_2008.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Alvesgaspar",
+  "img": "images/words/pig.jpg"
+ },
+ "panda": {
+  "file": "File:Ailuropoda melanoleuca (Panda géant) - 445.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/68/Ailuropoda_melanoleuca_%28Panda_g%C3%A9ant%29_-_445.jpg/500px-Ailuropoda_melanoleuca_%28Panda_g%C3%A9ant%29_-_445.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Ailuropoda_melanoleuca_(Panda_g%C3%A9ant)_-_445.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Medium69 (William Crochot)",
+  "img": "images/words/panda.jpg"
+ },
+ "pizza": {
+  "file": "File:L&B Spumoni Gardens pizza (41436).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/L%26B_Spumoni_Gardens_pizza_%2841436%29.jpg/500px-L%26B_Spumoni_Gardens_pizza_%2841436%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:L%26B_Spumoni_Gardens_pizza_(41436).jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Rhododendrites",
+  "img": "images/words/pizza.jpg"
+ },
+ "robot": {
+  "file": "File:Ha Ha Toys, Planet Robot, Blue, Main Street Toys Exclusive, Double Dose.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/Ha_Ha_Toys%2C_Planet_Robot%2C_Blue%2C_Main_Street_Toys_Exclusive%2C_Double_Dose.jpg/500px-Ha_Ha_Toys%2C_Planet_Robot%2C_Blue%2C_Main_Street_Toys_Exclusive%2C_Double_Dose.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Ha_Ha_Toys,_Planet_Robot,_Blue,_Main_Street_Toys_Exclusive,_Double_Dose.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "D J Shin",
+  "img": "images/words/robot.jpg"
+ },
+ "tiger": {
+  "file": "File:Panthera tigris altaica 13 - Buffalo Zoo.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Panthera_tigris_altaica_13_-_Buffalo_Zoo.jpg/500px-Panthera_tigris_altaica_13_-_Buffalo_Zoo.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Panthera_tigris_altaica_13_-_Buffalo_Zoo.jpg",
+  "license": "Public domain",
+  "artist": "Dave Pape",
+  "img": "images/words/tiger.jpg"
+ },
+ "train": {
+  "file": "File:RhB ABe 8-12 Allegra between Lagalb and Ospizio Bernina.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d0/RhB_ABe_8-12_Allegra_between_Lagalb_and_Ospizio_Bernina.jpg/500px-RhB_ABe_8-12_Allegra_between_Lagalb_and_Ospizio_Bernina.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:RhB_ABe_8-12_Allegra_between_Lagalb_and_Ospizio_Bernina.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Kabelleger / David Gubler (http://www.bahnbilder.ch)",
+  "img": "images/words/train.jpg"
+ },
+ "van": {
+  "file": "File:Mercedes Vision Van, IAA 2017, Frankfurt (1Y7A3490).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Mercedes_Vision_Van%2C_IAA_2017%2C_Frankfurt_%281Y7A3490%29.jpg/500px-Mercedes_Vision_Van%2C_IAA_2017%2C_Frankfurt_%281Y7A3490%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Mercedes_Vision_Van,_IAA_2017,_Frankfurt_(1Y7A3490).jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Matti Blume",
+  "img": "images/words/van.jpg"
+ },
+ "whale": {
+  "file": "File:Humpback whale (Megaptera novaeangliae) calf Moorea 2.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/03/Humpback_whale_%28Megaptera_novaeangliae%29_calf_Moorea_2.jpg/500px-Humpback_whale_%28Megaptera_novaeangliae%29_calf_Moorea_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Humpback_whale_(Megaptera_novaeangliae)_calf_Moorea_2.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/whale.jpg"
+ },
+ "fox": {
+  "file": "File:Vulpes vulpes Mallnitz 01.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6e/Vulpes_vulpes_Mallnitz_01.jpg/500px-Vulpes_vulpes_Mallnitz_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Vulpes_vulpes_Mallnitz_01.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Uoaei1",
+  "img": "images/words/fox.jpg"
+ },
+ "yarn": {
+  "file": "File:Nadeln 002 2026 08 07.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Nadeln_002_2026_08_07.jpg/500px-Nadeln_002_2026_08_07.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Nadeln_002_2026_08_07.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Friedrich Haag",
+  "img": "images/words/yarn.jpg"
+ },
+ "zebra": {
+  "file": "File:Equus zebra hartmannae - Etosha 2015.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/Equus_zebra_hartmannae_-_Etosha_2015.jpg/500px-Equus_zebra_hartmannae_-_Etosha_2015.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Equus_zebra_hartmannae_-_Etosha_2015.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Yathin S Krishnappa",
+  "img": "images/words/zebra.jpg"
+ },
+ "cow": {
+  "file": "File:Cow (Fleckvieh breed) Oeschinensee Slaunger 2009-07-07.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8c/Cow_%28Fleckvieh_breed%29_Oeschinensee_Slaunger_2009-07-07.jpg/500px-Cow_%28Fleckvieh_breed%29_Oeschinensee_Slaunger_2009-07-07.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Cow_(Fleckvieh_breed)_Oeschinensee_Slaunger_2009-07-07.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Kim Hansen",
+  "img": "images/words/cow.jpg"
+ },
+ "sheep": {
+  "file": "File:Swaledale Sheep, Lake District, England - June 2009.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Swaledale_Sheep%2C_Lake_District%2C_England_-_June_2009.jpg/500px-Swaledale_Sheep%2C_Lake_District%2C_England_-_June_2009.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Swaledale_Sheep,_Lake_District,_England_-_June_2009.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "User:Diliff",
+  "img": "images/words/sheep.jpg"
+ },
+ "strawberry": {
+  "file": "File:Garden strawberry (Fragaria × ananassa) single2.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4c/Garden_strawberry_%28Fragaria_%C3%97_ananassa%29_single2.jpg/500px-Garden_strawberry_%28Fragaria_%C3%97_ananassa%29_single2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Garden_strawberry_(Fragaria_%C3%97_ananassa)_single2.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Ivar Leidus",
+  "img": "images/words/strawberry.jpg"
+ },
+ "boat": {
+  "file": "File:Zoutelande (NL), Strand, Blick auf die Nordsee -- 2022 -- 4984.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Zoutelande_%28NL%29%2C_Strand%2C_Blick_auf_die_Nordsee_--_2022_--_4984.jpg/500px-Zoutelande_%28NL%29%2C_Strand%2C_Blick_auf_die_Nordsee_--_2022_--_4984.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Zoutelande_(NL),_Strand,_Blick_auf_die_Nordsee_--_2022_--_4984.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Dietmar Rabich",
+  "img": "images/words/boat.jpg"
+ },
+ "bike": {
+  "file": "File:Parked bicycle with graffitied building facade and doors in Amsterdam.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Parked_bicycle_with_graffitied_building_facade_and_doors_in_Amsterdam.jpg/500px-Parked_bicycle_with_graffitied_building_facade_and_doors_in_Amsterdam.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Parked_bicycle_with_graffitied_building_facade_and_doors_in_Amsterdam.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Basile Morin",
+  "img": "images/words/bike.jpg"
+ },
+ "truck": {
+  "file": "File:Hdpe pipe installation.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/Hdpe_pipe_installation.jpg/500px-Hdpe_pipe_installation.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Hdpe_pipe_installation.jpg",
+  "license": "CC BY-SA 3.0",
+  "artist": "Tomascastelazo",
+  "img": "images/words/truck.jpg"
+ },
+ "bread": {
+  "file": "File:Milk loaf with wheatgerm.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/eb/Milk_loaf_with_wheatgerm.jpg/500px-Milk_loaf_with_wheatgerm.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Milk_loaf_with_wheatgerm.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Acabashi",
+  "img": "images/words/bread.jpg"
+ },
+ "cheese": {
+  "file": "File:Belper Mürggel B, WikiCheese Lausanne.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Belper_M%C3%BCrggel_B%2C_WikiCheese_Lausanne.jpg/500px-Belper_M%C3%BCrggel_B%2C_WikiCheese_Lausanne.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Belper_M%C3%BCrggel_B,_WikiCheese_Lausanne.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Yann Forget",
+  "img": "images/words/cheese.jpg"
+ },
+ "shoes": {
+  "file": "File:2023 Adidas Yeezy 350 V2 EF2905 (1).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/69/2023_Adidas_Yeezy_350_V2_EF2905_%281%29.jpg/500px-2023_Adidas_Yeezy_350_V2_EF2905_%281%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:2023_Adidas_Yeezy_350_V2_EF2905_(1).jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Jacek Halicki",
+  "img": "images/words/shoes.jpg"
+ },
+ "teddy bear": {
+  "file": "File:2023 Pluszowy miś.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/60/2023_Pluszowy_mi%C5%9B.jpg/500px-2023_Pluszowy_mi%C5%9B.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:2023_Pluszowy_mi%C5%9B.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Jacek Halicki",
+  "img": "images/words/teddy-bear.jpg"
+ },
+ "blocks": {
+  "file": "File:Toy Blocks (50995087111).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Toy_Blocks_%2850995087111%29.jpg/500px-Toy_Blocks_%2850995087111%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Toy_Blocks_(50995087111).jpg",
+  "license": "CC BY 2.0",
+  "artist": "ajay_suresh",
+  "img": "images/words/blocks.jpg"
+ },
+ "bed": {
+  "file": "File:Canopy bed of Amantaka Suite in Amantaka luxury Resort & Hotel in Luang Prabang Laos.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/Canopy_bed_of_Amantaka_Suite_in_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg/500px-Canopy_bed_of_Amantaka_Suite_in_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Canopy_bed_of_Amantaka_Suite_in_Amantaka_luxury_Resort_%26_Hotel_in_Luang_Prabang_Laos.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Basile Morin",
+  "img": "images/words/bed.jpg"
+ },
+ "chair": {
+  "file": "File:Santorin (GR), Fira -- 2017 -- 2598.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Santorin_%28GR%29%2C_Fira_--_2017_--_2598.jpg/500px-Santorin_%28GR%29%2C_Fira_--_2017_--_2598.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Santorin_(GR),_Fira_--_2017_--_2598.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Dietmar Rabich",
+  "img": "images/words/chair.jpg"
+ },
+ "cloud": {
+  "file": "File:Cumulus humilis - 39.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Cumulus_humilis_-_39.jpg/500px-Cumulus_humilis_-_39.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Cumulus_humilis_-_39.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Medium69 (William Crochot)",
+  "img": "images/words/cloud.jpg"
+ },
+ "shark": {
+  "file": "File:Tiburón azul (Prionace glauca), canal Fayal-Pico, islas Azores, Portugal, 2020-07-27, DD 14.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Tibur%C3%B3n_azul_%28Prionace_glauca%29%2C_canal_Fayal-Pico%2C_islas_Azores%2C_Portugal%2C_2020-07-27%2C_DD_14.jpg/500px-Tibur%C3%B3n_azul_%28Prionace_glauca%29%2C_canal_Fayal-Pico%2C_islas_Azores%2C_Portugal%2C_2020-07-27%2C_DD_14.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Tibur%C3%B3n_azul_(Prionace_glauca),_canal_Fayal-Pico,_islas_Azores,_Portugal,_2020-07-27,_DD_14.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Diego Delso",
+  "img": "images/words/shark.jpg"
+ },
+ "crab": {
+  "file": "File:Carcinus maenas.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/17/Carcinus_maenas.jpg/500px-Carcinus_maenas.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Carcinus_maenas.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Hans Hillewaert",
+  "img": "images/words/crab.jpg"
+ },
+ "turtle": {
+  "file": "File:Green sea turtle (Chelonia mydas) Moorea.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Green_sea_turtle_%28Chelonia_mydas%29_Moorea.jpg/500px-Green_sea_turtle_%28Chelonia_mydas%29_Moorea.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Green_sea_turtle_(Chelonia_mydas)_Moorea.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/turtle.jpg"
+ },
+ "snowy": {
+  "file": "File:Iceland's Mid-Atlantic Ridge during snow.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/Iceland%27s_Mid-Atlantic_Ridge_during_snow.jpg/500px-Iceland%27s_Mid-Atlantic_Ridge_during_snow.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Iceland%27s_Mid-Atlantic_Ridge_during_snow.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Bar Harel",
+  "img": "images/words/snowy.jpg"
+ },
+ "tomato": {
+  "file": "File:Tomato plant 2026 G2.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/23/Tomato_plant_2026_G2.jpg/500px-Tomato_plant_2026_G2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Tomato_plant_2026_G2.jpg",
+  "license": "CC BY 4.0",
+  "artist": "George Chernilevsky",
+  "img": "images/words/tomato.jpg"
+ },
+ "corn": {
+  "file": "File:Corn on the cob - Massachusetts.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Corn_on_the_cob_-_Massachusetts.jpg/500px-Corn_on_the_cob_-_Massachusetts.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Corn_on_the_cob_-_Massachusetts.jpg",
+  "license": "CC0",
+  "artist": "Daderot",
+  "img": "images/words/corn.jpg"
+ },
+ "butterfly": {
+  "file": "File:Common brimstone butterfly (Gonepteryx rhamni) male.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6a/Common_brimstone_butterfly_%28Gonepteryx_rhamni%29_male.jpg/500px-Common_brimstone_butterfly_%28Gonepteryx_rhamni%29_male.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Common_brimstone_butterfly_(Gonepteryx_rhamni)_male.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Charles J. Sharp",
+  "img": "images/words/butterfly.jpg"
+ },
+ "ladybug": {
+  "file": "File:Siebenpunkt-Marienkäfer (Coccinella septempunctata) auf Blüte im FFH-Gebiet \"Viernheimer Waldheide und angrenzende Flächen\".jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1f/Siebenpunkt-Marienk%C3%A4fer_%28Coccinella_septempunctata%29_auf_Bl%C3%BCte_im_FFH-Gebiet_%22Viernheimer_Waldheide_und_angrenzende_Fl%C3%A4chen%22.jpg/500px-Siebenpunkt-Marienk%C3%A4fer_%28Coccinella_septempunctata%29_auf_Bl%C3%BCte_im_FFH-Gebiet_%22Viernheimer_Waldheide_und_angrenzende_Fl%C3%A4chen%22.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Siebenpunkt-Marienk%C3%A4fer_(Coccinella_septempunctata)_auf_Bl%C3%BCte_im_FFH-Gebiet_%22Viernheimer_Waldheide_und_angrenzende_Fl%C3%A4chen%22.jpg",
+  "license": "CC BY 4.0",
+  "artist": "Stephan Sprinz",
+  "img": "images/words/ladybug.jpg"
+ },
+ "penguin": {
+  "file": "File:African penguin, Cape Town ( 1050598).jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/African_penguin%2C_Cape_Town_%28_1050598%29.jpg/500px-African_penguin%2C_Cape_Town_%28_1050598%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:African_penguin,_Cape_Town_(_1050598).jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Matti Blume",
+  "img": "images/words/penguin.jpg"
+ },
+ "giraffe": {
+  "file": "File:Three giraffes 01.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/89/Three_giraffes_01.jpg/500px-Three_giraffes_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Three_giraffes_01.jpg",
+  "license": "CC BY-SA 4.0",
+  "artist": "Byrdyak",
+  "img": "images/words/giraffe.jpg"
+ }
+}
