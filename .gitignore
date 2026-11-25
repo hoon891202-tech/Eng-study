@@ -1,0 +1,33 @@
+# 비밀값 — 절대 커밋하지 않음 (이름만 적은 .env.example은 커밋)
+.env
+.env.*
+!.env.example
+
+# OS·편집기 임시 파일
+.DS_Store
+._*
+Thumbs.db
+ehthumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 사진 받기 도구(tools/photos.py)·녹음 도구 임시 파일
+*.tmp
+*.part
+scratchpad/
+tools/*.log
+
+# 로컬 테스트 결과물
+node_modules/
+test-results/
+playwright-report/
+*.log
