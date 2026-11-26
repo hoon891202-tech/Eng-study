@@ -31,3 +31,6 @@ node_modules/
 test-results/
 playwright-report/
 *.log
+
+# 사진 후보(tools/photos.py candidates 결과 — 검수 후 pick한 것만 images/words로)
+photo-candidates/
