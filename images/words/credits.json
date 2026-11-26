@@ -510,5 +510,21 @@
   "license": "CC BY-SA 4.0",
   "artist": "Byrdyak",
   "img": "images/words/giraffe.jpg"
+ },
+ "book": {
+  "file": "File:13-11-02-olb-by-RalfR-03.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c5/13-11-02-olb-by-RalfR-03.jpg/500px-13-11-02-olb-by-RalfR-03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:13-11-02-olb-by-RalfR-03.jpg",
+  "license": "CC BY 3.0",
+  "artist": "Ralf Roletschek",
+  "img": "images/words/book.jpg"
+ },
+ "water": {
+  "file": "File:Blue glass with carbonated water.jpg",
+  "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/Blue_glass_with_carbonated_water.jpg/500px-Blue_glass_with_carbonated_water.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+  "page": "https://commons.wikimedia.org/wiki/File:Blue_glass_with_carbonated_water.jpg",
+  "license": "CC0",
+  "artist": "W.carter",
+  "img": "images/words/water.jpg"
  }
 }
